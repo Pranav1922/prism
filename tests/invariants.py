@@ -37,6 +37,11 @@ def check(cond: bool, inv: str, msg: str) -> None:
         raise InvariantViolation(f"{inv}: {msg}")
 
 
+def classified(res: StepResult) -> str | None:
+    """The turn class the kernel journaled for this step (T0.classify), if any."""
+    return next((r["cls"] for r in res.rules if r["rule"] == "T0.classify"), None)
+
+
 def _canon(res: StepResult) -> str:
     return canonical_json(res)
 
@@ -61,8 +66,7 @@ class CheckedKernel(Kernel):
         check(_canon(first) == _canon(second), "INV-01", "decide() is not deterministic")
         res = super().step(event)
         check(_canon(res) == _canon(first), "INV-01", "step() diverged from decide()")
-        if event.kind is Kind.USER_TEXT and self.understand(str(event.payload.get("text", "")), event.payload).cls \
-                is not TurnClass.BACKCHANNEL:
+        if event.kind is Kind.USER_TEXT and classified(res) not in (None, TurnClass.BACKCHANNEL.value):
             self.user_seqs.add(event.seq)
         check_step(self, before, self.state, event, res)
         self.violations_checked += 1
@@ -145,7 +149,8 @@ def check_step(k: CheckedKernel, before: State, after: State, event: Event, res:
     tool_calls = [a for a in acts if a.kind is ActionKind.TOOL_CALL]
     if turn_open:
         check(not tool_calls, "INV-12", "tool call dispatched while a user turn is open")
-    elif goal is not None and not after.get("meta", "deadline_passed") and not after.get("meta", "session_ended"):
+    elif goal is not None and not after.get("meta", "deadline_passed") and not after.get("meta", "session_ended") \
+            and after.get("meta", "switch_pending") != goal.goal_id:  # D11: withheld until the planner answers
         for d in ds:
             spec = registry.get(d.node.tool)
             if d.key is None or spec is None or spec.effect is not Effect.READ_ONLY:
@@ -187,8 +192,7 @@ def check_step(k: CheckedKernel, before: State, after: State, event: Event, res:
         old = bslots.get(key)
         if old is not None and reg != old:
             check(reg.writer_seq >= old.writer_seq, "INV-18", f"register {key} went back to writer {reg.writer_seq}")
-    if event.kind is Kind.USER_TEXT and k.understand(str(event.payload.get("text", "")), event.payload).cls \
-            is TurnClass.BACKCHANNEL:
+    if event.kind is Kind.USER_TEXT and classified(res) == TurnClass.BACKCHANNEL.value:
         check(aslots == bslots, "INV-18", "a backchannel wrote a slot")
 
     # INV-19 hold liveness

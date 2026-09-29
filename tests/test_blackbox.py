@@ -11,6 +11,7 @@ import pytest
 from agent.adapter.stdio import DEFAULT_FIXTURES, table_understanding
 from agent.journal import Journal, replay
 from agent.kernel import Config, Kernel
+from agent.understand_rules import recognize
 from evaluation import harness, metrics
 from evaluation.agents import resolve
 from evaluation.scenario import discover, load
@@ -34,7 +35,7 @@ def test_scenarios_contain_no_agent_internals(path):
         assert f'"{word}' not in text, f"{path.name} mentions agent-internal '{word}'"
 
 
-GATED = [p for p in ALL if p.parent.name in ("reference", "adversarial")]  # understanding suite: after Phase 4 step 1
+GATED = ALL
 
 
 @pytest.mark.parametrize("path", GATED, ids=[p.stem for p in GATED])
@@ -70,7 +71,10 @@ def test_agent_journal_from_a_black_box_run_replays_identically(tmp_path):
     cmd = [sys.executable, "-m", "agent.adapter.stdio", "--journal", str(journal_path)]
     harness.run(load(discover("E2_rapid_corrections_each_turn")[0]), cmd)
     journal = Journal.loads(journal_path.read_text())
-    understand = table_understanding(json.loads(DEFAULT_FIXTURES.read_text())["understanding"])
+    header = journal.records[0]
+    assert header["backends"]["understanding"] == "rules"  # the recorded run used the Phase 4 recogniser
+    understand = recognize if header["backends"]["understanding"] == "rules" else \
+        table_understanding(json.loads(DEFAULT_FIXTURES.read_text())["understanding"])
     report = replay(journal, lambda h: Kernel(Config(**h["config"]), understand=understand))
     assert report.identical, report.first_divergence
     assert journal.records[0]["mode"] == "sim-lockstep"

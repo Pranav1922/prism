@@ -44,7 +44,8 @@ from agent.model import (
     snapshot,
 )
 from agent.registry import ArgError, Registry
-from agent.understand import Understanding, annotated
+from agent.understand import SlotInfo, UnderstandContext, Understanding
+from agent.understand_rules import recognize
 
 TABLES = ("meta", "goals", "slots", "calls", "ops", "frames", "timers", "pending", "reqs")
 RETRY_REASONS = ("timeout", "error", "unknown")
@@ -66,6 +67,8 @@ def _meta_defaults() -> dict:
         "rev": 0, "last_content_seq": 0, "active_goal": None, "hold": False, "turn": None,
         "goal_switch_seq": 0, "registry": Registry(), "n_call": 0, "n_action": 0, "n_goal": 0,
         "n_req": 0, "n_percept": 0, "deadline_passed": False, "session_ended": False,
+        "switch_pending": None,  # D11: goal whose work is withheld until the planner answers a goal switch
+        "utterances": (),  # ((based_seq, text), ...) of recent closed content turns: fast-understanding context
     }
 
 
@@ -239,7 +242,7 @@ def committed_attempt(r: Any, op_id: tuple) -> Call | None:
 
 class Kernel:
     def __init__(self, config: Config | None = None,
-                 understand: Callable[[str, dict], Understanding] = annotated):
+                 understand: Callable[..., Understanding] = recognize):
         self.config = config or Config()
         self.understand = understand
         self.state = State()
@@ -295,6 +298,7 @@ class _Step:
         self._actions: list[tuple] = []
         self.dispatched: list[Call] = []
         self.want_snapshot = False
+        self.closed_turn: Turn | None = None  # the user turn this step closed (drives turn-close responses)
 
     # ------------------------------------------------------------ small helpers
 
@@ -439,6 +443,9 @@ class _Step:
             return
         self.set_meta("turn", replace(turn, open=False))
         self.rule("TURN.close", turn_id=turn.turn_id, inferred=inferred)
+        self.closed_turn = turn
+        if turn.content:
+            self.set_meta("utterances", (*self.meta("utterances"), (self.meta("last_content_seq"), turn.text))[-12:])
         if self.meta("hold"):
             self.set_meta("hold", False)
             self.rule("HOLD.clear", by="turn_close")
@@ -471,6 +478,30 @@ class _Step:
         self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": "understand", "view": view})
         self.rule("PLANNER.request", req_id=rid, based_on_seq=based)
 
+    def understand_context(self, turn: Turn | None) -> UnderstandContext:
+        """Read-only view for fast understanding: the ACTIVE goal only, never another goal's slots."""
+        goal = active_goal(self.tx)
+        open_text = turn.text if turn is not None and turn.open else ""
+        if goal is None:
+            return UnderstandContext(utterances=self.meta("utterances"), turn_text=open_text)
+        registry = self.registry()
+        schemas: dict[str, dict] = {}
+        for node in goal.graph:
+            spec = registry.get(node.tool)
+            props = json.loads(spec.params_json).get("properties", {}) if spec else {}
+            for param, b in node.args:
+                if b[0] == "slot":
+                    schemas.setdefault(b[1], props.get(param, {}))
+        regs = {n: r for (g, n), r in self.tx.items("slots") if g == goal.goal_id}
+        slots = tuple(
+            SlotInfo(name, regs[name].value if name in regs else None, schemas.get(name, {}),
+                     (*regs[name].history, (regs[name].value, regs[name].writer_seq, regs[name].source))
+                     if name in regs else ())
+            for name in sorted(set(schemas) | set(regs)))
+        pending = tuple((p.kind, p.slots, p.asked) for _, p in self.tx.items("pending")
+                        if p.goal_id == goal.goal_id and not p.resolved)
+        return UnderstandContext(goal.intent, slots, pending, self.meta("utterances"), open_text)
+
     # ------------------------------------------------------------ event handlers
 
     def on_session_start(self) -> None:
@@ -493,8 +524,8 @@ class _Step:
 
     def on_user_text(self) -> None:
         text = str(self.payload.get("text", ""))
-        u = self.understand(text, self.payload)
         turn = self.turn()
+        u = self.understand(text, self.payload, self.understand_context(turn))
         if turn is None or not turn.open:
             turn = Turn(turn_id=(turn.turn_id + 1) if turn else 1, open=True)
             self.rule("TURN.open", turn_id=turn.turn_id)
@@ -506,9 +537,12 @@ class _Step:
         if marker and not self.meta("hold"):
             self.set_meta("hold", True)
             self.rule("HOLD.set", by=u.cls.value)
+        goal = active_goal(self.tx)
         if u.cls is TurnClass.GOAL_SWITCH:
             self.set_meta("goal_switch_seq", self.seq)
-        goal = active_goal(self.tx)
+            if goal is not None:  # D11: do not re-dispatch abandoned work before the planner answers
+                self.set_meta("switch_pending", goal.goal_id)
+                self.rule("SWITCH.pending", goal_id=goal.goal_id)
         if u.writes and goal is None:
             self.rule("T0.no_goal", writes=sorted(u.writes))
         if goal is not None and content:
@@ -517,7 +551,7 @@ class _Step:
                     writes = writes + ((goal.goal_id, name, self.seq),)
             if u.writes:
                 self.resolve_pendings(goal.goal_id, tuple(u.writes))
-            if marker and not u.writes:  # F5: marker without attribution -> active goal's read-only calls
+            if marker and not u.writes and not u.attributed:  # F5: marker WITHOUT attribution -> read-only calls
                 for _, call in self.tx.items("calls"):
                     if call.goal_id == goal.goal_id and call.relevance is Relevance.DESIRED \
                             and call.effect is Effect.READ_ONLY and call.outcome not in KNOWN_OUTCOMES:
@@ -532,7 +566,8 @@ class _Step:
             turn, text=(turn.text + " " + text).strip(), classes=turn.classes + (u.cls.value,),
             content=turn.content or content, interrupting=turn.interrupting or marker, t0_writes=writes,
             marker_seqs=turn.marker_seqs + ((self.seq,) if marker else ())))
-        self.rule("T0.classify", cls=u.cls.value)
+        self.rule("T0.classify", cls=u.cls.value, cues=list(u.cues), attributed=list(u.attributed),
+                  writes=sorted(u.writes))
         self.arm("eot", "eot_silence", self.now + self.cfg.silence_s)
 
     def on_end_of_turn(self) -> None:
@@ -626,6 +661,9 @@ class _Step:
             self.tx.set("reqs", req.req_id, replace(req, open=False))
         based = req.based_on_seq
         structure_ok = based >= self.meta("goal_switch_seq")
+        if self.meta("switch_pending") is not None and structure_ok:
+            self.set_meta("switch_pending", None)
+            self.rule("SWITCH.answered", req_id=req.req_id)
         intent = self.payload.get("intent")
         goal = active_goal(self.tx)
         if intent and structure_ok and (goal is None or goal.intent != intent or self.payload.get("new_goal")):
@@ -646,8 +684,16 @@ class _Step:
             self.rule("PROP.no_goal", req_id=req.req_id)
             return
         gid = goal.goal_id
-        for name, value in sorted((self.payload.get("slot_writes") or {}).items()):
+        written = self.payload.get("slot_writes") or {}
+        for name, value in sorted(written.items()):
             self.write_register(gid, name, value, based, "PLANNER", True)
+        for (g, name), reg in self.tx.items("slots"):  # D12: a retraction the planner saw but did not fill
+            if g == gid and reg.value is None and reg.source == "T0" and reg.writer_seq <= based \
+                    and name not in written and reg.history and reg.history[-1][0] is not None:
+                previous = reg.history[-1][0]
+                self.tx.set("slots", (g, name), Register(previous, based, "PLANNER", True,
+                                                           reg.history + ((None, reg.writer_seq, "T0"),)))
+                self.rule("T0.retraction_reverted", slot=name, value=previous)
         if structure_ok and "graph" in self.payload:
             nodes = tuple(self.parse_node(gid, i, n, based) for i, n in enumerate(self.payload["graph"]))
             self.tx.set("goals", gid, replace(self.tx.get("goals", gid), graph=nodes))
@@ -748,6 +794,8 @@ class _Step:
         for d in ds:
             if d.key is None or any(c.relevance is Relevance.DESIRED for c in self.calls_for(goal.goal_id, d.key)):
                 continue
+            if self.meta("switch_pending") == goal.goal_id:
+                continue  # D11
             spec = self.registry().get(d.node.tool)
             if spec is None:
                 continue
@@ -837,6 +885,22 @@ class _Step:
         attempts = (committed_attempt(self.tx, tuple(op)) for op in ops)
         return [c.call_id for c in attempts if c is not None]
 
+    def status_text(self, goal: Goal | None) -> str:
+        """Answer a status question from state only: what is running, what is done, what is missing."""
+        if goal is None:
+            return "Nothing is running right now."
+        running = [c for _, c in self.tx.items("calls") if c.goal_id == goal.goal_id
+                   and c.relevance is Relevance.DESIRED and c.outcome not in KNOWN_OUTCOMES]
+        if running:
+            return "Still working on it: " + "; ".join(f"{c.tool} {c.args_json}" for c in running) + ". No result yet."
+        keys = tuple(d.key for d in resolve(self.tx, goal))
+        if goal.final_keys is not None and goal.final_keys == keys:
+            return f"I've already given you the {goal.intent} result."
+        asked = [p for _, p in self.tx.items("pending") if p.goal_id == goal.goal_id and p.asked and not p.resolved]
+        if asked:
+            return f"I'm waiting on your answer: {asked[-1].text}"
+        return "I still need a few details before I can continue."
+
     def speak(self) -> None:
         if self.turn_open():
             return  # INV-20: no speech while the user holds the floor
@@ -848,11 +912,24 @@ class _Step:
             if not p.asked and not p.resolved and goal is not None and p.goal_id == goal.goal_id:
                 self.tx.set("pending", pid, replace(p, asked=True))
                 self.emit(ActionKind.CLARIFY, "PENDING.ask", {"text": p.text, "slots": list(p.slots), "reason": p.kind})
-        read_only = [c for c in self.dispatched if c.effect is Effect.READ_ONLY]
-        if read_only:
-            what = "; ".join(f"{c.tool} {c.args_json}" for c in read_only)
-            self.emit(ActionKind.SPEAK, "SPEECH.ack",
-                      {"text": f"Working on it: {what}", "act": "ack", "grounded_on": []})
+        spoke = False
+        if self.dispatched:  # progressive wording only: dispatch is never a completion claim
+            what = "; ".join(f"{c.tool} {c.args_json}" for c in self.dispatched)
+            self.emit(ActionKind.SPEAK, "SPEECH.ack", {"text": f"Working on it: {what}", "act": "ack", "grounded_on": []})
+            spoke = True
+        turn = self.closed_turn
+        if turn is not None and not spoke:  # a closed user turn gets a grounded response, never a filler
+            classes = set(turn.classes)
+            if TurnClass.STATUS_QUERY.value in classes:
+                self.emit(ActionKind.SPEAK, "SPEECH.status",
+                          {"text": self.status_text(goal), "act": "narration", "grounded_on": []})
+            elif TurnClass.GOAL_SWITCH.value in classes and goal is not None:
+                self.emit(ActionKind.SPEAK, "SPEECH.switch",
+                          {"text": f"Okay, leaving {goal.intent} for now.", "act": "ack", "grounded_on": []})
+            elif TurnClass.CORRECTION.value in classes and turn.t0_writes:
+                names = ", ".join(sorted({n for _, n, _ in turn.t0_writes}))
+                self.emit(ActionKind.SPEAK, "SPEECH.correction",
+                          {"text": f"Okay, updating the {names}.", "act": "ack", "grounded_on": []})
         if goal is None or self.meta("deadline_passed") or self.meta("hold"):
             return
         done, grounded, ops = self.satisfied(goal)

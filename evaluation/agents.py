@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 AGENTS: dict[str, list[str]] = {
     "impl_a": [sys.executable, "-m", "agent.adapter.stdio"],
+    "impl_a_scripted": [sys.executable, "-m", "agent.adapter.stdio", "--understanding", "scripted"],  # comparison only
     # "impl_b": ["<developer B's launcher command>"],
 }
 

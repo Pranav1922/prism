@@ -29,26 +29,30 @@ from agent.model import Action, Event
 from agent.planner import ScriptedPerception, ScriptedPlanner
 from agent.runtime import Runtime
 from agent.understand import Understanding, annotated
+from agent.understand_rules import recognize
 
 DEFAULT_FIXTURES = Path(__file__).resolve().parents[1] / "fixtures" / "scripted.json"
 
 
 def table_understanding(table: dict):
-    """Scripted fast understanding keyed by utterance text (Phase 1 stand-in; replaced in Phase 3)."""
-    def understand(text: str, payload: dict) -> Understanding:
+    """Scripted fast understanding keyed by utterance text: the Phase 1-3 stand-in, kept only for comparison
+    (`--understanding scripted`). The default is the deterministic recogniser (Phase 4)."""
+    def understand(text: str, payload: dict, ctx: object = None) -> Understanding:
         note = table.get(text)
         return annotated(text, {"t0": note} if note is not None else {})
     return understand
 
 
 class LocalAgent:
-    def __init__(self, fixtures: dict, config: Config | None = None):
+    def __init__(self, fixtures: dict, config: Config | None = None, understanding: str = "rules"):
         self.clock = FakeClock()
         self.sched = Scheduler(self.clock)
-        self.kernel = Kernel(config, understand=table_understanding(fixtures.get("understanding", {})))
+        understand = recognize if understanding == "rules" else table_understanding(fixtures.get("understanding", {}))
+        self.kernel = Kernel(config, understand=understand)
         digest = hashlib.sha256(json.dumps(fixtures, sort_keys=True).encode()).hexdigest()
         self.journal = Journal(header={"config": dataclasses.asdict(self.kernel.config), "mode": "sim-lockstep",
-                                       "backends": {"planner": "scripted", "perception": "scripted"},
+                                       "backends": {"understanding": understanding, "planner": "scripted",
+                                                    "perception": "scripted"},
                                        "fixtures_sha256": digest})
         self.runtime = Runtime(self.kernel, self.journal, self._on_action, self._on_effect)
         self.ingress, self.egress = Ingress("harness"), Egress()
@@ -120,8 +124,10 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--fixtures", default=str(DEFAULT_FIXTURES))
     ap.add_argument("--journal", default=None, help="write the kernel journal here on exit")
+    ap.add_argument("--understanding", choices=("rules", "scripted"), default="rules",
+                    help="rules: deterministic recogniser (default); scripted: the old per-utterance table")
     args = ap.parse_args(argv)
-    agent = LocalAgent(json.loads(Path(args.fixtures).read_text()))
+    agent = LocalAgent(json.loads(Path(args.fixtures).read_text()), understanding=args.understanding)
     for line in sys.stdin:
         if not line.strip():
             continue

@@ -1,0 +1,1498 @@
+{
+ "_comment": "Internal fast-understanding corpus (Phase 4). Paraphrases, not scenario phrases. Measured, not a real-world accuracy claim. `items` is the development set the rules were tuned on; `holdout_items` were written after tuning and are reported untouched.",
+ "contexts": {
+  "flight": {
+   "intent": "search_flights",
+   "slots": [
+    {
+     "name": "origin",
+     "value": "BLR",
+     "schema": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "IATA airport code, e.g. BOM for Mumbai"
+     },
+     "history": [
+      [
+       "BLR",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "destination",
+     "value": "DEL",
+     "schema": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "IATA airport code, e.g. BOM for Mumbai"
+     },
+     "history": [
+      [
+       "DEL",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "date",
+     "value": "Fri",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "Mon",
+       "Tue",
+       "Wed",
+       "Thu",
+       "Fri",
+       "Sat",
+       "Sun"
+      ],
+      "description": "day of the week"
+     },
+     "history": [
+      [
+       "Fri",
+       4,
+       "PLANNER"
+      ]
+     ]
+    }
+   ],
+   "pending": [],
+   "utterances": [
+    [
+     4,
+     "find flights from Bangalore to Delhi on Friday"
+    ]
+   ]
+  },
+  "flight_no_history": {
+   "intent": "search_flights",
+   "slots": [
+    {
+     "name": "origin",
+     "value": "BLR",
+     "schema": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "IATA airport code, e.g. BOM for Mumbai"
+     },
+     "history": [
+      [
+       "BLR",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "destination",
+     "value": "DEL",
+     "schema": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "IATA airport code, e.g. BOM for Mumbai"
+     },
+     "history": [
+      [
+       "DEL",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "date",
+     "value": "Fri",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "Mon",
+       "Tue",
+       "Wed",
+       "Thu",
+       "Fri",
+       "Sat",
+       "Sun"
+      ],
+      "description": "day of the week"
+     },
+     "history": [
+      [
+       "Fri",
+       4,
+       "PLANNER"
+      ]
+     ]
+    }
+   ],
+   "pending": [],
+   "utterances": []
+  },
+  "booking": {
+   "intent": "book_flight",
+   "slots": [
+    {
+     "name": "flight_id",
+     "value": "6E-701",
+     "schema": {
+      "type": "string",
+      "minLength": 1
+     },
+     "history": [
+      [
+       "6E-701",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "passengers",
+     "value": 1,
+     "schema": {
+      "type": "integer",
+      "minimum": 1
+     },
+     "history": [
+      [
+       1,
+       4,
+       "PLANNER"
+      ]
+     ]
+    }
+   ],
+   "pending": [],
+   "utterances": [
+    [
+     4,
+     "book flight 6E-701"
+    ]
+   ]
+  },
+  "ticket": {
+   "intent": "create_ticket",
+   "slots": [
+    {
+     "name": "issue",
+     "value": "cracked screen",
+     "schema": {
+      "type": "string",
+      "minLength": 1
+     },
+     "history": [
+      [
+       "cracked screen",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "priority",
+     "value": "high",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "low",
+       "medium",
+       "high"
+      ]
+     },
+     "history": [
+      [
+       "high",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "date",
+     "value": "Mon",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "Mon",
+       "Tue",
+       "Wed",
+       "Thu",
+       "Fri",
+       "Sat",
+       "Sun"
+      ]
+     },
+     "history": [
+      [
+       "Mon",
+       4,
+       "PLANNER"
+      ]
+     ]
+    }
+   ],
+   "pending": [],
+   "utterances": [
+    [
+     4,
+     "raise a ticket for my cracked screen, high priority on Monday"
+    ]
+   ]
+  },
+  "flight_date_asked": {
+   "intent": "search_flights",
+   "slots": [
+    {
+     "name": "origin",
+     "value": "BLR",
+     "schema": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "IATA airport code, e.g. BOM for Mumbai"
+     },
+     "history": [
+      [
+       "BLR",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "destination",
+     "value": "DEL",
+     "schema": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "IATA airport code, e.g. BOM for Mumbai"
+     },
+     "history": [
+      [
+       "DEL",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "date",
+     "value": "Sat",
+     "schema": {
+      "type": "string",
+      "enum": [
+       "Mon",
+       "Tue",
+       "Wed",
+       "Thu",
+       "Fri",
+       "Sat",
+       "Sun"
+      ],
+      "description": "day of the week"
+     },
+     "history": [
+      [
+       "Sat",
+       6,
+       "PLANNER"
+      ]
+     ]
+    }
+   ],
+   "pending": [
+    [
+     "conflict",
+     [
+      "date"
+     ],
+     true
+    ]
+   ],
+   "utterances": [
+    [
+     4,
+     "find flights from Bangalore to Delhi on Friday"
+    ]
+   ]
+  },
+  "confirm_asked": {
+   "intent": "book_flight",
+   "slots": [
+    {
+     "name": "flight_id",
+     "value": "6E-701",
+     "schema": {
+      "type": "string",
+      "minLength": 1
+     },
+     "history": [
+      [
+       "6E-701",
+       4,
+       "PLANNER"
+      ]
+     ]
+    },
+    {
+     "name": "passengers",
+     "value": 2,
+     "schema": {
+      "type": "integer",
+      "minimum": 1
+     },
+     "history": [
+      [
+       2,
+       4,
+       "PLANNER"
+      ]
+     ]
+    }
+   ],
+   "pending": [
+    [
+     "planner_clarify",
+     [],
+     true
+    ]
+   ],
+   "utterances": []
+  },
+  "no_goal": {
+   "intent": null,
+   "slots": [],
+   "pending": [],
+   "utterances": []
+  }
+ },
+ "items": [
+  {
+   "context": "flight",
+   "text": "Actually, Mumbai",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no, make it Mumbai",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "wait, Goa instead",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "change the destination to Mumbai",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "actually, to Chennai",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no, from Chennai",
+   "cls": "CORRECTION",
+   "writes": {
+    "origin": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "change the origin to Pune",
+   "cls": "CORRECTION",
+   "writes": {
+    "origin": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "actually make it Saturday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Sat"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no wait, Sunday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Sun"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "make that Monday instead",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Mon"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "sorry, I meant Thursday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Thu"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "actually Saturday to Mumbai",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Sat",
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no, the date should be Tuesday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Tue"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no, Delhi",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no wait",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no no",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "actually...",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "make that",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "hold on",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "actually, make it business class",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no, New Delhi",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "to Mumbai",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "value_only_correction"
+  },
+  {
+   "context": "flight",
+   "text": "on Saturday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Sat"
+   },
+   "confirm": false,
+   "group": "value_only_correction"
+  },
+  {
+   "context": "flight",
+   "text": "to Delhi",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "repeat_same_value"
+  },
+  {
+   "context": "flight_no_history",
+   "text": "no, Mumbai",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "ambiguous_bare_value"
+  },
+  {
+   "context": "flight",
+   "text": "forget it, check the weather in Pune",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "never mind",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "scratch that, book a cab instead",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "cancel that, I want to raise a ticket",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "let's do something else",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "how long will this take?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "what's happening?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "are you still searching?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "is it done yet?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "any update?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "what's taking so long?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "how's it going?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "are you still there?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "what's the status?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "how much longer?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "okay",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "ok",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "uh-huh",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "mm-hmm",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "got it",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "yes",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "yeah",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "sure",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "thanks",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "thank you",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "alright",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "cool",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "I see",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "right",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "that sounds great, thanks",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel_long"
+  },
+  {
+   "context": "flight",
+   "text": "also show me the prices",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "unrelated_or_new_request"
+  },
+  {
+   "context": "flight",
+   "text": "what time does it leave?",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "unrelated_or_new_request"
+  },
+  {
+   "context": "flight",
+   "text": "can you find a cheaper one?",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "unrelated_or_new_request"
+  },
+  {
+   "context": "flight",
+   "text": "tell me a joke",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "unrelated_or_new_request"
+  },
+  {
+   "context": "flight",
+   "text": "what's the weather like there?",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "unrelated_or_new_request"
+  },
+  {
+   "context": "flight",
+   "text": "I actually want",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "partial_transcript"
+  },
+  {
+   "context": "booking",
+   "text": "wait, two of us",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 2
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "make it three passengers",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 3
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "actually for 4 people",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 4
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "no, just one",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "two passengers",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 2
+   },
+   "confirm": false,
+   "group": "value_only_correction"
+  },
+  {
+   "context": "booking",
+   "text": "book it",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "booking",
+   "text": "is it booked yet?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "ticket",
+   "text": "make it medium priority",
+   "cls": "CORRECTION",
+   "writes": {
+    "priority": "medium"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "ticket",
+   "text": "actually low",
+   "cls": "CORRECTION",
+   "writes": {
+    "priority": "low"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "ticket",
+   "text": "change the date to Friday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Fri"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "ticket",
+   "text": "no, Tuesday, and high priority",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Tue"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "ticket",
+   "text": "high priority please",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "repeat_same_value"
+  },
+  {
+   "context": "flight_date_asked",
+   "text": "Saturday",
+   "cls": "ANSWER",
+   "writes": {},
+   "confirm": false,
+   "group": "clarification_answer"
+  },
+  {
+   "context": "flight_date_asked",
+   "text": "the one on Friday",
+   "cls": "ANSWER",
+   "writes": {
+    "date": "Fri"
+   },
+   "confirm": false,
+   "group": "clarification_answer"
+  },
+  {
+   "context": "flight_date_asked",
+   "text": "yes",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "affirm_without_confirmation"
+  },
+  {
+   "context": "confirm_asked",
+   "text": "yes",
+   "cls": "ANSWER",
+   "writes": {},
+   "confirm": true,
+   "group": "confirmation"
+  },
+  {
+   "context": "confirm_asked",
+   "text": "sure, go ahead",
+   "cls": "ANSWER",
+   "writes": {},
+   "confirm": true,
+   "group": "confirmation"
+  },
+  {
+   "context": "confirm_asked",
+   "text": "okay",
+   "cls": "ANSWER",
+   "writes": {},
+   "confirm": true,
+   "group": "confirmation"
+  },
+  {
+   "context": "no_goal",
+   "text": "find flights from Bangalore to Delhi",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "no_goal"
+  },
+  {
+   "context": "no_goal",
+   "text": "uh-huh",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "no_goal"
+  },
+  {
+   "context": "no_goal",
+   "text": "how long will this take?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "no_goal"
+  },
+  {
+   "context": "no_goal",
+   "text": "actually, to Mumbai",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "no_goal"
+  },
+  {
+   "text": "ticket for my cracked screen on Monday",
+   "context": "flight",
+   "group": "cross_goal",
+   "cls": "REQUEST",
+   "confirm": false,
+   "writes": {}
+  },
+  {
+   "text": "also book me a hotel near the airport for Sunday",
+   "context": "flight",
+   "group": "cross_goal",
+   "cls": "REQUEST",
+   "confirm": false,
+   "writes": {}
+  }
+ ],
+ "holdout_items": [
+  {
+   "context": "flight",
+   "text": "oh wait, I want to go to Kolkata",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "nope, destination is Goa",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "sorry, flying from Mumbai actually",
+   "cls": "CORRECTION",
+   "writes": {
+    "origin": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "hmm, rather Wednesday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Wed"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no no, Friday is wrong, make it Sunday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Sun"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "switch the date to Thursday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Thu"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "update destination to Hyderabad please",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "oops, I meant to Bengaluru",
+   "cls": "CORRECTION",
+   "writes": {
+    "destination": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "wait wait wait",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "hang on a second",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "no that's not right",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "actually leave on Monday from Chennai",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Mon",
+    "origin": null
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "no, five of us",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 5
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "make it 2 tickets",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 2
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "booking",
+   "text": "wait, three people are travelling",
+   "cls": "CORRECTION",
+   "writes": {
+    "passengers": 3
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "ticket",
+   "text": "actually priority low",
+   "cls": "CORRECTION",
+   "writes": {
+    "priority": "low"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "ticket",
+   "text": "no, move it to Wednesday",
+   "cls": "CORRECTION",
+   "writes": {
+    "date": "Wed"
+   },
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "flight",
+   "text": "forget about the flight, I need a hotel",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "nevermind, check my order status",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "scratch that",
+   "cls": "GOAL_SWITCH",
+   "writes": {},
+   "confirm": false,
+   "group": "goal_switch"
+  },
+  {
+   "context": "flight",
+   "text": "what's going on?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "any news?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "has it finished yet?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "still working on it?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "booking",
+   "text": "did it work?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "how is it going?",
+   "cls": "STATUS_QUERY",
+   "writes": {},
+   "confirm": false,
+   "group": "status_query"
+  },
+  {
+   "context": "flight",
+   "text": "ok cool",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "yep",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "perfect",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "mhm",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "understood, thanks",
+   "cls": "BACKCHANNEL",
+   "writes": {},
+   "confirm": false,
+   "group": "backchannel"
+  },
+  {
+   "context": "flight",
+   "text": "show me the cheapest one",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "flight",
+   "text": "is there a direct flight?",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "flight",
+   "text": "what's the baggage allowance",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "flight",
+   "text": "also add a return trip",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "flight",
+   "text": "I'd like a window seat",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "ticket",
+   "text": "and attach the photo",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "flight",
+   "text": "yes, to Delhi",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "booking",
+   "text": "for one person",
+   "cls": "REQUEST",
+   "writes": {},
+   "confirm": false,
+   "group": "request"
+  },
+  {
+   "context": "flight_date_asked",
+   "text": "Friday",
+   "cls": "ANSWER",
+   "writes": {
+    "date": "Fri"
+   },
+   "confirm": false,
+   "group": "answer"
+  },
+  {
+   "context": "flight_date_asked",
+   "text": "Sunday please",
+   "cls": "ANSWER",
+   "writes": {
+    "date": "Sun"
+   },
+   "confirm": false,
+   "group": "answer"
+  },
+  {
+   "context": "confirm_asked",
+   "text": "yep, go ahead",
+   "cls": "ANSWER",
+   "writes": {},
+   "confirm": true,
+   "group": "answer"
+  },
+  {
+   "context": "confirm_asked",
+   "text": "yes please",
+   "cls": "ANSWER",
+   "writes": {},
+   "confirm": true,
+   "group": "answer"
+  },
+  {
+   "context": "flight_no_history",
+   "text": "wait, Pune",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  },
+  {
+   "context": "no_goal",
+   "text": "wait, to Goa",
+   "cls": "CORRECTION",
+   "writes": {},
+   "confirm": false,
+   "group": "correction"
+  }
+ ]
+}
