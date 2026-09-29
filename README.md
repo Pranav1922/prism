@@ -3,10 +3,11 @@
 ## Current implementation status
 
 **Phase 1 complete: deterministic runtime foundation** ([details](docs/PHASE1_IMPLEMENTATION.md)).
+**Phase 2 complete: asynchronous runtime** ([report](docs/PHASE2_RUNTIME.md)): concurrent planner and perception workers, advisory cancellation, timeouts, failure events, live and manual timers, thread-safe submission; the kernel is still the only state writer. Next: the protocol adapter ([plan](docs/PHASE2_PLAN.md)).
 
 - **What works:** a single-writer session kernel with supersession, cancellation, result admission, the state-changing operation ledger, a full journal and byte-identical replay. It runs against a local deterministic scenario simulator with scripted tools, planner and perception.
-- **Tests:** 73 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step.
-- **Not yet:** the Samsung harness adapter (evaluation kit not available), real models, speech wording, Docker.
+- **Tests:** 86 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in both the simulator and the async runtime.
+- **Not yet:** the protocol adapter and local harness, fast understanding from schemas, real planner/ASR/vision backends, response wording, evaluation engine, Docker.
 
 ```sh
 uv venv --python 3.12 .venv && uv pip install -e ".[dev]"

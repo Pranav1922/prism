@@ -7,6 +7,7 @@ event loop and the harness adapter wrap the same object once the evaluation kit 
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 
 import jsonschema
@@ -30,10 +31,12 @@ def record_step(journal: Journal, event: Event, res: StepResult) -> None:
 class Runtime:
     def __init__(self, kernel: Kernel, journal: Journal,
                  on_action: Callable[[Action], None] = lambda a: None,
-                 on_effect: Callable[[dict], None] = lambda e: None):
+                 on_effect: Callable[[dict], None] = lambda e: None,
+                 observer: Callable[[Event, StepResult, float], None] | None = None):
         self.kernel, self.journal = kernel, journal
         self.inbox = Inbox()
         self.on_action, self.on_effect = on_action, on_effect
+        self.observer = observer  # (event, result, step wall seconds): metrics only, never decisions
         self.egress_errors: list[tuple[Action, str]] = []
 
     def submit(self, event: Event) -> Event | None:
@@ -46,8 +49,12 @@ class Runtime:
 
     def run_until_idle(self) -> None:
         while (event := self.inbox.get()) is not None:
+            started = time.perf_counter()
             res = self.kernel.step(event)
+            elapsed = time.perf_counter() - started
             record_step(self.journal, event, res)
+            if self.observer is not None:
+                self.observer(event, res, elapsed)
             for action in res.actions:
                 try:
                     validate_action(action)  # egress (INV-22)

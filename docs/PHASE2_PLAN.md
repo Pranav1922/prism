@@ -322,4 +322,5 @@ A phase is complete only when:
 
 | Phase | Status | Report |
 |---|---|---|
-| 2: Real runtime | in progress | — |
+| 2: Real runtime | **complete** (86 tests, benchmarked) | [`PHASE2_RUNTIME.md`](PHASE2_RUNTIME.md) |
+| 8: Protocol adapter | next | — |

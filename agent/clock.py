@@ -9,8 +9,20 @@ from __future__ import annotations
 
 import heapq
 import itertools
+import time
 
 from agent.model import Event, Kind
+
+
+class WallClock:
+    """Live clock: seconds since construction, on the monotonic clock. Stands in for the harness clock
+    until the evaluation kit defines one (G3); the kernel still only sees event timestamps."""
+
+    def __init__(self) -> None:
+        self._t0 = time.monotonic()
+
+    def now(self) -> float:
+        return time.monotonic() - self._t0
 
 
 class FakeClock:
