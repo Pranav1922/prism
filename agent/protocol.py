@@ -39,7 +39,7 @@ _PAYLOAD = {
     ActionKind.FINAL: {
         "type": "object", "required": ["text", "act", "grounded_on", "ops", "snapshot"], "additionalProperties": False,
         "properties": {"text": {"type": "string", "minLength": 1}, "act": {"enum": ["answer", "narration"]},
-                       "grounded_on": _IDS, "ops": {"type": "array"}, "snapshot": _SNAPSHOT},
+                       "grounded_on": _IDS, "ops": {"type": "array"}, "ledger_calls": _IDS, "snapshot": _SNAPSHOT},
     },
     ActionKind.SNAPSHOT: {
         "type": "object", "required": ["snapshot"], "additionalProperties": False,

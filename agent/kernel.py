@@ -589,6 +589,7 @@ class _Step:
         self.emit(ActionKind.FINAL, "DEADLINE.final", {
             "text": "Here is where things stand." if not done else f"Done: {goal.intent}.",  # type: ignore[union-attr]
             "act": "answer" if done else "narration", "grounded_on": grounded, "ops": ops,
+            "ledger_calls": self.ledger_calls(ops),
             "snapshot": snapshot(goal, dict(self.tx.items("slots")))})
 
     def on_tool_result(self) -> None:
@@ -830,6 +831,12 @@ class _Step:
                         grounded.append(done.call_id)
         return complete, grounded, ops
 
+    def ledger_calls(self, ops: list[list]) -> list[str]:
+        """D6: the committed attempts behind COMMITTED operations, for truthful external reporting only.
+        They are never bindings or grounding (INV-09 still reads `grounded_on`, which holds DESIRED calls only)."""
+        attempts = (committed_attempt(self.tx, tuple(op)) for op in ops)
+        return [c.call_id for c in attempts if c is not None]
+
     def speak(self) -> None:
         if self.turn_open():
             return  # INV-20: no speech while the user holds the floor
@@ -854,6 +861,7 @@ class _Step:
             self.tx.set("goals", goal.goal_id, replace(self.tx.get("goals", goal.goal_id), final_keys=keys))
             self.emit(ActionKind.FINAL, "FINAL.complete", {
                 "text": f"Done: {goal.intent}.", "act": "answer", "grounded_on": grounded, "ops": ops,
+                "ledger_calls": self.ledger_calls(ops),
                 "snapshot": snapshot(goal, dict(self.tx.items("slots")))})
 
 
