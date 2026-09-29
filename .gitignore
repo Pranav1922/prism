@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+*.egg-info/
+.DS_Store
+journals/
+# PRISM source documents: page footers carry a Samsung employee watermark; keep them out of the public repo.
+fwdsamsungprismgenaihackathon3_0registrationli/

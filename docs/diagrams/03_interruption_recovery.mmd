@@ -1,0 +1,50 @@
+%% Theme 05 — Interruption recovery (ARCHITECTURE_REVIEW.md §9.4, §10.1–10.2, F5–F7)
+%% Solid arrow = user speech / agent speech. Open arrow (-) ) = asynchronous message.
+sequenceDiagram
+    autonumber
+    participant U as User via harness
+    participant K as Session kernel · one step per event
+    participant R as Reasoner · planner
+    participant H as Harness tools
+
+    Note over U,H: k(...) = content key of a call = tool + its argument values · seq = inbox sequence number
+    rect rgb(232, 241, 255)
+    Note over U,H: 1 · Task starts
+    U->>K: "Find flights Bangalore to Delhi on Friday" + end of turn · seq 2
+    K-)R: propose · request r1 based on seq 2
+    R--)K: proposal r1 · goal search_flights · origin BLR · destination DEL · date Fri
+    Note over K: apply · desired key k(BLR, DEL, Fri)
+    K-)H: tool call c1 search_flights(BLR, DEL, Fri)
+    K->>U: "Searching Bangalore to Delhi on Friday"
+    end
+
+    rect rgb(255, 244, 229)
+    Note over U,H: 2 · Interruption · decided in ONE step · no model in the path
+    U->>K: "actually, to Mumbai" · seq 5
+    Note over K: fast understanding → CORRECTION<br/>destination DEL → Mumbai · writer seq 5 · new state revision<br/>desired key becomes k(BLR, BOM, Fri)<br/>SUPERSESSION → c1 relevance DESIRED → SUPERSEDED = logical invalidation<br/>hold on · no state-changing dispatch · no final answer
+    K-)H: advisory cancel c1 · physical cancellation attempt, may be ignored
+    K-)R: propose · request r2 based on seq 5
+    end
+
+    rect rgb(232, 241, 255)
+    Note over U,H: 3 · New work starts when the interrupting turn closes
+    U->>K: end of turn · seq 6
+    Note over K: hold off · reconcile: k(BLR, BOM, Fri) has no DESIRED call
+    K-)H: tool call c2 search_flights(BLR, BOM, Fri)
+    K->>U: "Okay, Mumbai instead of Delhi" + state snapshot
+    end
+
+    rect rgb(244, 244, 245)
+    Note over U,H: 4 · Late result from superseded work
+    H--)K: result c1 OK · the tool finished anyway · seq 7
+    Note over K: outcome of c1 = OK is recorded as fact<br/>relevance is SUPERSEDED → STALE-RESULT REJECTION<br/>never used for speech, arguments or snapshot
+    R--)K: proposal r2 · destination Mumbai · seq 8
+    Note over K: last-writer-wins: writer seq 5 ≥ field seq 5 → applied<br/>key unchanged → c2 kept · no rerun
+    end
+
+    rect rgb(231, 247, 238)
+    Note over U,H: 5 · Current result
+    H--)K: result c2 OK · seq 9
+    Note over K: c2 is DESIRED → VALID-RESULT APPLICATION
+    K->>U: final answer grounded on c2 + state snapshot · destination Mumbai
+    end

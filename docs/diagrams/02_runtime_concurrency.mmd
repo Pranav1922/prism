@@ -1,0 +1,45 @@
+%% Theme 05 — Runtime concurrency boundary (ARCHITECTURE_REVIEW.md §6.1, F1–F2)
+%% Dashed = asynchronous, may overlap in time. Solid = serialized inside one kernel step.
+flowchart TB
+    subgraph CONC["MAY RUN CONCURRENTLY · overlapping in time · none of these can touch session state"]
+        direction LR
+        C_HIN["<b>Harness input</b><br/>text · audio · frames<br/>interrupts · manifest"]
+        C_TOOL["<b>Harness executes tools</b><br/>many calls in flight<br/>results may come late"]
+        C_RSN["<b>Reasoner requests</b><br/>each stamped with the<br/>input sequence it saw"]
+        C_PER["<b>Perception worker process</b><br/>speech-to-text<br/>image understanding"]
+        C_TMR["<b>Timers</b><br/>harness time"]
+        C_IO["<b>Journal writes</b><br/>adapter I/O"]
+        C_HIN ~~~ C_TOOL ~~~ C_RSN ~~~ C_PER ~~~ C_TMR ~~~ C_IO
+    end
+
+    INBOX[["<b>INBOX</b> · first-in first-out · the sequence number it assigns is the only total order"]]
+
+    subgraph SER["SERIALIZED · one kernel step at a time · never interleaved · target under 5 ms per step"]
+        direction LR
+        S1["<b>1 · take next event</b><br/>sequence n<br/>'now' := the event's<br/>harness time"]
+        S2["<b>2 · decide</b><br/>reads state · no waiting · no I/O<br/>classify turn · last writer wins<br/>desired keys · result admission<br/>operation lock · commit barrier"]
+        S3["<b>3 · apply</b><br/>the ONLY place<br/>state changes<br/>revision n → n+1"]
+        S4["<b>4 · emit actions in order</b><br/>advisory cancel before<br/>its replacement call"]
+        S5["<b>5 · start effects</b><br/>with a read-only view"]
+        S1 --> S2 --> S3 --> S4 --> S5
+    end
+
+    WHY["<b>WHY THERE ARE NO STATE RACES</b><br/>• exactly one writer: apply<br/>• workers never hold mutable state<br/>• every result re-enters as an event and is checked at admission before it is used<br/>• a step takes milliseconds, so an interruption never waits behind slow work"]
+
+    CONC -.->|"inputs · tool results · proposals · transcripts · evidence · timer events"| INBOX
+    INBOX ==>|one event at a time| SER
+    OUT["<b>LEAVES THE STEP ASYNCHRONOUSLY</b> → back to the concurrent side above<br/>tool calls · advisory cancels → harness · effect requests → reasoner, perception · timers armed · journal records"]
+    SER -.-> OUT
+    OUT ~~~ WHY
+
+    classDef conc fill:#E7F7EE,stroke:#16A34A,color:#052E16
+    classDef ser fill:#E8F1FF,stroke:#2563EB,color:#0B1B3F
+    classDef apply fill:#DBEAFE,stroke:#1D4ED8,stroke-width:3px,color:#0B1B3F
+    classDef why fill:#FFFBEB,stroke:#D97706,color:#3D2A10
+    class C_HIN,C_TOOL,C_RSN,C_PER,C_TMR,C_IO conc
+    class INBOX,S1,S2,S4,S5 ser
+    class S3 apply
+    class WHY why
+    class OUT conc
+    style CONC fill:#F4FBF7,stroke:#16A34A,stroke-dasharray:5 4
+    style SER fill:#F5F9FF,stroke:#2563EB,stroke-width:3px

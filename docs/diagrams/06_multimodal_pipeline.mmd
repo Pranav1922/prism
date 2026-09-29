@@ -1,0 +1,57 @@
+%% Theme 05 — Multimodal processing (ARCHITECTURE_REVIEW.md §8.5, §9.3, F3–F5)
+%% Dashed = asynchronous. Perception runs behind the conversation; its output is evidence, not fact.
+flowchart LR
+    subgraph IN["ARRIVE ASYNCHRONOUSLY · any order"]
+        direction TB
+        TXT["Text chunk<br/>harness transcript"]
+        AUD["Audio clip"]
+        IMG["Image frame"]
+    end
+
+    INBOX[["Inbox · sequence numbers"]]
+
+    subgraph WORKER["PERCEPTION WORKER PROCESS · concurrent"]
+        direction TB
+        ASR["Speech-to-text<br/>only when no harness transcript exists"]
+        VIS["Image understanding<br/>hint: open slot names of the goal, if known<br/>otherwise generic extraction"]
+    end
+
+    subgraph KERNEL["SESSION KERNEL · one step per event"]
+        direction TB
+        ACK["Immediate acknowledgement<br/>names the modality and purpose<br/>'Looking at the display in your photo'"]
+        TP["ONE text path for typed and spoken input<br/>fast understanding → slot values"]
+        EV["Evidence keyed by FRAME<br/>claims = image facts + confidence<br/>attached to the turn it arrived in → that turn's goal"]
+        FUSE{"Slot needs a value<br/>that an attached frame claims?"}
+        WRITE["Write slot · last writer wins<br/>writer = input sequence for text,<br/>frame sequence for evidence<br/>newest frame wins per claim"]
+        CONFLICT["CONFLICT or LOW CONFIDENCE<br/>evidence ≠ user statement · transcript ≠ audio<br/>→ specific clarification naming the options<br/>→ state-changing tools BLOCKED on that slot"]
+        OLD["Frame attached to a SUSPENDED goal<br/>evidence kept, not applied to the new goal<br/>no speech about it"]
+        EV --> FUSE
+        FUSE -->|agrees, confident| WRITE
+        FUSE -->|disagrees or unsure| CONFLICT
+        EV --> OLD
+    end
+
+    TXT -.-> INBOX
+    AUD -.-> INBOX
+    IMG -.-> INBOX
+    INBOX -->|audio or frame arrives| ACK
+    INBOX -->|text| TP
+    INBOX -.->|audio| ASR
+    INBOX -.->|frame| VIS
+    ASR -.->|transcript event| TP
+    VIS -.->|evidence event| EV
+    TP --> WRITE
+    TP -->|transcript and audio disagree| CONFLICT
+
+    classDef ext fill:#FFF4E5,stroke:#D9822B,color:#3D2A10
+    classDef kern fill:#E8F1FF,stroke:#2563EB,color:#0B1B3F
+    classDef worker fill:#E7F7EE,stroke:#16A34A,color:#052E16
+    classDef warn fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#3D2A10
+    classDef stale fill:#F4F4F5,stroke:#9CA3AF,stroke-dasharray:4 3,color:#6B7280
+    class TXT,AUD,IMG ext
+    class INBOX,ACK,TP,EV,FUSE,WRITE kern
+    class ASR,VIS worker
+    class CONFLICT warn
+    class OLD stale
+    style WORKER fill:#F4FBF7,stroke:#16A34A,stroke-dasharray:5 4
+    style KERNEL fill:#F5F9FF,stroke:#2563EB,stroke-width:2px

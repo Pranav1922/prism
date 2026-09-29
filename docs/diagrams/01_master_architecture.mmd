@@ -1,0 +1,66 @@
+%% Theme 05 — Final master architecture (source of truth: ARCHITECTURE_REVIEW.md, FINAL ARCHITECTURE F1–F9)
+%% Solid arrow = synchronous, inside one kernel step. Dashed arrow = asynchronous message.
+flowchart TB
+    H_IN["<b>EVALUATION HARNESS · input stream</b> · external · virtual clock · any event can arrive at any time<br/>text chunks + end-of-turn · audio clips · image frames · interrupt signal · tool manifest · tool results, possibly late"]
+
+    ING["<b>PROTOCOL ADAPTER · ingress</b> · the only code that knows the wire format<br/>wire → internal events · manifest → tool specs · media → file references"]
+
+    subgraph KERNEL["SESSION KERNEL · fast path + coordination · single writer · one synchronous step per event · never waits on models or tools"]
+        direction LR
+        INBOX[["INBOX<br/>one ordered<br/>queue<br/>sequence<br/>number =<br/>the order<br/>of truth"]]
+        FAST["<b>Fast understanding</b><br/>deterministic · in-step<br/>correction · answer ·<br/>status question ·<br/>backchannel<br/>slot values from<br/>tool schemas"]
+        ADM["<b>Result admission</b><br/>record every<br/>outcome as fact<br/>use it only if the<br/>call is still DESIRED"]
+        STATE[("<b>SESSION STATE</b><br/>goal stack<br/>slot values ·<br/>last writer wins<br/>task graph →<br/>desired call keys<br/>calls: relevance<br/>× outcome<br/>operation ledger<br/>frame evidence<br/>tool registry")]
+        REC["<b>Reconcile</b><br/>desired vs actual<br/>desired key, no DESIRED<br/>call → dispatch at turn close<br/>held by a DESIRED call → keep<br/>key gone → SUPERSEDED<br/>+ advisory cancel<br/>if outcome unknown"]
+        GATE["<b>State-changing gates</b><br/>commit barrier<br/>one unresolved<br/>attempt per operation<br/>never a second create"]
+        SPK["<b>Speech + snapshot</b><br/>derived from state<br/>no 'done' without<br/>a successful result"]
+        INBOX -->|user input| FAST
+        INBOX -->|results| ADM
+        FAST --> STATE
+        ADM --> STATE
+        STATE --> REC --> GATE --> SPK
+    end
+
+    subgraph WORK["SLOW PATH · concurrent workers · get a read-only view · return results as events · never touch state"]
+        direction LR
+        RSN["<b>Reasoner · planner</b><br/>proposes goal, slot values, task graph<br/>never ids, actions or snapshots"]
+        PER["<b>Perception worker process</b><br/>speech-to-text · image understanding<br/>→ evidence with confidence"]
+        TMR["<b>Timers</b> · harness time<br/>tool timeouts · progress<br/>120 s deadline"]
+        RSN ~~~ PER ~~~ TMR
+    end
+
+    EGR["<b>PROTOCOL ADAPTER · egress</b> · encode actions · schema-validate every payload<br/>speech · clarification · tool call with call_id · advisory cancel · final response + state snapshot"]
+
+    TOOLS["<b>EVALUATION HARNESS · executes tools and scores the trace</b><br/>mock tools may finish even after a cancel · their results come back through the input stream"]
+
+    JOURNAL[("<b>JOURNAL</b><br/>full inbox log<br/>+ every decision<br/>+ every action<br/>→ deterministic<br/>offline replay")]
+
+    LEGEND["<b>How to read</b><br/>solid arrow = synchronous, inside one kernel step<br/>dashed arrow = asynchronous message<br/>SUPERSEDED = logically cancelled: its result is never used"]
+    JOURNAL ~~~ LEGEND
+
+    H_IN -.->|asynchronous events| ING
+    ING --> KERNEL
+    KERNEL -.->|effect requests| WORK
+    WORK -.->|results return to the inbox| KERNEL
+    KERNEL -->|actions, in order| EGR
+    EGR -.-> TOOLS
+    KERNEL -.->|every event and decision| JOURNAL
+
+    classDef ext fill:#FFF4E5,stroke:#D9822B,color:#3D2A10
+    classDef adapter fill:#F3F0FF,stroke:#6E56CF,color:#1F1147
+    classDef kern fill:#E8F1FF,stroke:#2563EB,color:#0B1B3F
+    classDef state fill:#DBEAFE,stroke:#1D4ED8,stroke-width:2px,color:#0B1B3F
+    classDef gate fill:#FEF2F2,stroke:#DC2626,stroke-width:2px,color:#450A0A
+    classDef worker fill:#E7F7EE,stroke:#16A34A,color:#052E16
+    classDef journal fill:#F4F4F5,stroke:#52525B,color:#18181B
+    class H_IN,TOOLS ext
+    class ING,EGR adapter
+    class INBOX,FAST,ADM,REC,SPK kern
+    class STATE state
+    class GATE gate
+    class RSN,PER,TMR worker
+    class JOURNAL journal
+    classDef legend fill:#FFFFFF,stroke:#9CA3AF,stroke-dasharray:2 2,color:#374151
+    class LEGEND legend
+    style KERNEL fill:#F5F9FF,stroke:#2563EB,stroke-width:3px
+    style WORK fill:#F4FBF7,stroke:#16A34A,stroke-dasharray:5 4

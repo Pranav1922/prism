@@ -1,0 +1,90 @@
+%% Theme 05 — Tool safety and idempotency (ARCHITECTURE_REVIEW.md §10, §16 D2/D3/D6/D7, F6, INV-11–17)
+%% Solid = inside a kernel step. Dashed = asynchronous (the harness executes tools).
+%% Hexagons are decisions.
+flowchart TB
+    subgraph PREP["BEFORE DISPATCH · inside one kernel step"]
+        direction LR
+        P["Planner proposes<br/>a task-graph node"]
+        B["Bind every argument<br/>to a slot · an upstream result<br/>· a constant<br/>literals are rebound to slots"]
+        V{{"Arguments valid<br/>against the tool schema?"}}
+        ASK["Ask the user for the<br/>missing or invalid slot<br/>nothing dispatched"]
+        C{{"Side-effect class<br/>manifest flag → name verbs<br/>→ default state-changing"}}
+        P --> B --> V
+        V -->|no| ASK
+        V -->|yes| C
+    end
+
+    subgraph RO["READ-ONLY PATH"]
+        direction TB
+        R1{{"Turn closed · key desired and<br/>no DESIRED call holds it?<br/>superseded twins don't matter"}}
+        R2["Dispatch · new call_id<br/>relevance DESIRED<br/>outcome PENDING"]
+        R3["Keep the existing DESIRED call<br/>or wait until the turn closes"]
+        R1 -->|yes| R2
+        R1 -->|no| R3
+    end
+
+    subgraph SM["STATE-CHANGING PATH · one operation = goal + tool + instance tag"]
+        direction TB
+        G1{{"Commit barrier<br/>turn closed · hold off · slots confirmed<br/>no open clarification on them · user-originated goal"}}
+        WAIT["Wait for the barrier"]
+        G2{{"Operation state?"}}
+        FREE["FREE · no attempts, or all FAILED_CLEAN<br/>→ dispatch attempt → operation LOCKED"]
+        LOCK["LOCKED · an attempt is PENDING or UNKNOWN<br/>→ NO new create · wait · verify with a<br/>read-only status tool or ask the user"]
+        DONE["COMMITTED · an attempt succeeded<br/>→ NEVER a second create"]
+        G1 -->|no| WAIT
+        G1 -->|yes| G2
+        G2 --> FREE
+        G2 --> LOCK
+        G2 --> DONE
+    end
+
+    EXEC["<b>Harness executes the tool</b><br/>an advisory cancel may or may not stop it"]
+
+    subgraph ADMIT["RESULT ADMISSION · every result, in arrival order"]
+        direction TB
+        O1["<b>1 · Record the outcome as fact</b> · monotonic<br/>OK · FAILED_CLEAN = not executed · UNKNOWN = timeout or malformed"]
+        O2["<b>2 · State-changing only: update the operation</b> · whatever the relevance<br/>OK → COMMITTED · FAILED_CLEAN → FREE · UNKNOWN → stays LOCKED, verify or ask"]
+        O3{{"3 · Is the call still DESIRED?"}}
+        USE["Use the result<br/>bindings · speech · snapshot"]
+        IGN["Stale result rejected<br/>never used"]
+        O1 --> O2 --> O3
+        O3 -->|yes| USE
+        O3 -->|"no · SUPERSEDED"| IGN
+    end
+
+    subgraph LATE["TOOL COMPLETED EVEN THOUGH CANCEL WAS REQUESTED · state-changing, SUPERSEDED, outcome OK"]
+        direction LR
+        L1["Operation COMMITTED<br/>the side effect is real<br/>and is recorded"]
+        L2{{"Committed arguments =<br/>current desired arguments?"}}
+        L3["Done<br/>report truthfully"]
+        L4["Modify or cancel tool as a NEW operation<br/>only if the manifest offers it and policy allows<br/>otherwise ask the user · never re-create"]
+        L1 --> L2
+        L2 -->|yes| L3
+        L2 -->|no| L4
+    end
+
+    PREP ~~~ RO
+    C -->|read-only| R1
+    C -->|state-changing| G1
+    R2 -.-> EXEC
+    FREE -.-> EXEC
+    EXEC -.->|result event| O1
+    IGN -->|"state-changing call, outcome OK"| L1
+
+    classDef step fill:#E8F1FF,stroke:#2563EB,color:#0B1B3F
+    classDef gate fill:#FEF2F2,stroke:#DC2626,color:#450A0A
+    classDef ok fill:#E7F7EE,stroke:#16A34A,color:#052E16
+    classDef stale fill:#F4F4F5,stroke:#9CA3AF,stroke-dasharray:4 3,color:#6B7280
+    classDef ext fill:#FFF4E5,stroke:#D9822B,color:#3D2A10
+    classDef warn fill:#FEF3C7,stroke:#D97706,color:#3D2A10
+    class P,B,V,C,R1,R3,O1,O2,O3,L2 step
+    class G1,G2,LOCK,DONE,WAIT gate
+    class R2,FREE,USE,L3 ok
+    class IGN stale
+    class EXEC ext
+    class ASK,L1,L4 warn
+    style SM fill:#FFF8F8,stroke:#DC2626,stroke-width:2px
+    style RO fill:#F5F9FF,stroke:#2563EB
+    style PREP fill:#F5F9FF,stroke:#2563EB
+    style ADMIT fill:#F5F9FF,stroke:#2563EB,stroke-width:2px
+    style LATE fill:#FFFBEB,stroke:#D97706,stroke-width:2px

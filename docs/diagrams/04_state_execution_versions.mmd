@@ -1,0 +1,78 @@
+%% Theme 05 — State and execution identity across a correction (ARCHITECTURE_REVIEW.md §8.1–8.4, F3)
+%% Grey dashed = superseded work. Amber = what the correction changed. Validity comes from content keys;
+%% revision numbers only identify states in the trace.
+flowchart TB
+    subgraph BEFORE["STATE REVISION r7 · before the correction"]
+        direction LR
+        GA["<b>Session · goal stack</b><br/>g1 search + book flight · ACTIVE<br/>g0 earlier goal · SUSPENDED, kept"]
+        subgraph SLA["g1 slot values · last writer wins"]
+            direction TB
+            A_O["origin = BLR · writer seq 2"]
+            A_D["destination = DEL · writer seq 2"]
+            A_T["date = Fri · writer seq 2"]
+        end
+        subgraph TGA["g1 task graph · plan_rev 3 · desired keys derived"]
+            direction TB
+            A_N1["N1 search_flights(origin, destination, date)<br/>key k(BLR, DEL, Fri)"]
+            A_N3["N3 weather(origin) · key k(BLR)"]
+            A_N2["N2 book_flight(flight from N1 result)<br/>waits for N1 + commit barrier"]
+            A_N1 -->|output feeds| A_N2
+        end
+        subgraph CXA["executions"]
+            direction TB
+            A_C1["call c1 · k(BLR, DEL, Fri)<br/>DESIRED · outcome PENDING"]
+            A_C2["call c2 · k(BLR)<br/>DESIRED · outcome PENDING"]
+        end
+        GA --> SLA --> TGA --> CXA
+    end
+
+    CORR{{"<b>'actually, to Mumbai'</b> · seq 5 · ONE slot write → desired keys recomputed → nothing else touched"}}
+
+    subgraph AFTER["STATE REVISION r8 · after the correction"]
+        direction LR
+        GB["<b>Session · goal stack</b><br/>unchanged<br/>g1 ACTIVE · g0 SUSPENDED"]
+        subgraph SLB["g1 slot values"]
+            direction TB
+            B_O["origin = BLR · writer seq 2"]
+            B_D["destination = Mumbai · writer seq 5<br/>history: DEL at seq 2"]
+            B_T["date = Fri · writer seq 2"]
+        end
+        subgraph TGB["g1 task graph · plan_rev 4 · desired keys derived"]
+            direction TB
+            B_N1["N1 search_flights<br/>key k(BLR, BOM, Fri) · NEW KEY"]
+            B_N3["N3 weather(origin) · key k(BLR) · SAME KEY"]
+            B_N2["N2 book_flight<br/>still waits for the new N1 result"]
+            B_N1 -->|output feeds| B_N2
+        end
+        subgraph CXB["executions"]
+            direction TB
+            B_C1["call c1 · k(BLR, DEL, Fri)<br/>SUPERSEDED · advisory cancel sent<br/>its result will never be used"]
+            B_C2["call c2 · k(BLR)<br/>DESIRED · untouched, keeps running"]
+            B_C3["call c3 · k(BLR, BOM, Fri)<br/>DESIRED · dispatched when the turn closes"]
+        end
+        SNAP["<b>State snapshot</b> · derived, never stored<br/>intent · origin BLR · destination Mumbai · date Fri"]
+        GB --> SLB --> TGB --> CXB
+        SLB --> SNAP
+    end
+
+    BEFORE --> CORR --> AFTER
+
+    RULE["<b>VALIDITY RULE</b> · a call stays DESIRED only while its content key is in the ACTIVE goal's desired keys · keys are computed from current slot values + results of DESIRED upstream calls · a SUPERSEDED call is never used again, even if its key returns · so a correction supersedes exactly the work that read the changed value, and unrelated work (c2) keeps running"]
+    AFTER ~~~ RULE
+
+    classDef slot fill:#DBEAFE,stroke:#1D4ED8,color:#0B1B3F
+    classDef changed fill:#FEF3C7,stroke:#D97706,stroke-width:2px,color:#3D2A10
+    classDef node fill:#E8F1FF,stroke:#2563EB,color:#0B1B3F
+    classDef live fill:#E7F7EE,stroke:#16A34A,color:#052E16
+    classDef stale fill:#F4F4F5,stroke:#9CA3AF,stroke-dasharray:4 3,color:#6B7280
+    classDef derived fill:#F3F0FF,stroke:#6E56CF,color:#1F1147
+    classDef event fill:#FFF4E5,stroke:#D9822B,color:#3D2A10
+    classDef rule fill:#FFFBEB,stroke:#D97706,color:#3D2A10
+    class GA,GB,A_O,A_D,A_T,B_O,B_T slot
+    class B_D,B_N1 changed
+    class A_N1,A_N2,A_N3,B_N2,B_N3 node
+    class A_C1,A_C2,B_C2,B_C3 live
+    class B_C1 stale
+    class SNAP derived
+    class CORR event
+    class RULE rule

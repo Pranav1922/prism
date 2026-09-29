@@ -1,0 +1,56 @@
+%% Theme 05 — Trace and deterministic replay (ARCHITECTURE_REVIEW.md §11, F9, INV-23)
+%% Journal records are linked by sequence number (in), rule name (step) and caused_by (out).
+flowchart TB
+    subgraph LIVE["LIVE RUN · journal records written for one interruption"]
+        direction LR
+        E1["in · seq 5<br/>UserText 'actually, to Mumbai'"]
+        D1["step · seq 5 · revision 7 → 8<br/>rule T0.correction: destination DEL → Mumbai, writer seq 5<br/>desired keys at plan_rev 4: k(BLR, BOM, Fri), k(BLR)<br/>rule REL.supersede: c1 k(BLR, DEL, Fri) not desired"]
+        A1["out · advisory cancel c1<br/>caused_by seq 5 · rule REL.supersede"]
+        E2["in · seq 6<br/>EndOfTurn"]
+        A2["out · tool call c3 k(BLR, BOM, Fri)<br/>caused_by seq 6 · rule REC.dispatch<br/>arguments with the writer seq of each slot"]
+        E3["in · seq 7<br/>ToolResult c1 OK · full payload"]
+        D3["step · seq 7<br/>rule ADM.record_outcome: c1 OK<br/>used: NO, relevance SUPERSEDED"]
+        E4["in · seq 9<br/>ToolResult c3 OK"]
+        A4["out · final answer + state snapshot<br/>caused_by seq 9 · grounded on c3"]
+        E1 --> D1 --> A1
+        E2 --> A2
+        E3 --> D3
+        E4 --> A4
+    end
+
+    HEAD["header · code version · policy constants · hash seed · tool registry digest"]
+    J[("JOURNAL · append-only JSON lines<br/>in = every inbox event, incl. full model, perception and tool outputs<br/>step = rules fired, slot writes, relevance / outcome / operation changes<br/>out = actions with caused_by, rule, key, argument provenance<br/>metrics = first-speech latency, cancel latency, step duration")]
+    LIVE -.-> J
+    HEAD -.-> J
+
+    subgraph REPLAY["OFFLINE REPLAY · no harness, no models, no timers"]
+        direction LR
+        F["Feed the recorded in-records<br/>in their original sequence order"]
+        K2["Same kernel code<br/>same header constants<br/>'now' comes only from event time"]
+        CMP{{"step and out records<br/>identical to the journal?"}}
+        PASS["Behaviour reproduced exactly"]
+        FAIL["Diff = the first divergent decision"]
+        PERM["Permutation testing<br/>seeded reorder of result events within windows<br/>→ replay → assert invariants"]
+        F --> K2 --> CMP
+        CMP -->|yes| PASS
+        CMP -->|no| FAIL
+        PERM --> K2
+    end
+
+    J -.-> F
+
+    WHY["<b>ANSWERING THE JURY</b><br/>Why this call now? out.caused_by → step rules → the in-record that triggered it<br/>Why was c1 ignored? step at seq 7: recorded, not used, SUPERSEDED at seq 5<br/><br/><b>Rule-name prefixes</b><br/>T0 = fast understanding · REL = relevance<br/>REC = reconcile · ADM = result admission<br/>k(...) = content key: tool + argument values"]
+    REPLAY ~~~ WHY
+
+    classDef inrec fill:#FFF4E5,stroke:#D9822B,color:#3D2A10
+    classDef steprec fill:#E8F1FF,stroke:#2563EB,color:#0B1B3F
+    classDef outrec fill:#E7F7EE,stroke:#16A34A,color:#052E16
+    classDef journal fill:#F4F4F5,stroke:#52525B,color:#18181B
+    classDef stale fill:#F4F4F5,stroke:#9CA3AF,stroke-dasharray:4 3,color:#6B7280
+    classDef rule fill:#FFFBEB,stroke:#D97706,color:#3D2A10
+    class E1,E2,E3,E4 inrec
+    class D1,K2,CMP,F,PERM steprec
+    class A1,A2,A4,PASS outrec
+    class D3,FAIL stale
+    class J,HEAD journal
+    class WHY rule

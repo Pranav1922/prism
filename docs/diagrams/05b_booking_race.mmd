@@ -1,0 +1,31 @@
+%% Theme 05 — Supporting sequence: correction races a booking (ARCHITECTURE_REVIEW.md §10.6)
+sequenceDiagram
+    autonumber
+    participant U as User via harness
+    participant K as Session kernel
+    participant H as Harness tools
+
+    U->>K: "Yes, book the 7:05" + end of turn
+    Note over K: operation (g1, book_flight) is FREE · commit barrier holds
+    K-)H: tool call c3 book_flight · passengers 1
+    Note over K: operation LOCKED · attempt c3 PENDING
+    U->>K: "wait, two of us"
+    Note over K: passengers → 2 (last writer wins) · c3 SUPERSEDED
+    K-)H: advisory cancel c3
+    U->>K: end of turn
+    Note over K: desired: book with passengers 2<br/>operation is LOCKED → NO new create is dispatched
+    K->>U: "I'd already started booking for one, checking whether it went through"
+
+    alt the harness completes c3 anyway
+        H--)K: result c3 OK · booking B1
+        Note over K: operation COMMITTED with passengers 1 ≠ desired 2
+        K-)H: tool call c4 modify_booking(B1, passengers 2) · NEW operation, only if the manifest offers it
+        K->>U: "It went through for one, updating it to two"
+    else the harness honours the cancel or reports not executed
+        H--)K: result c3 cancelled / error, not executed
+        Note over K: attempt FAILED_CLEAN → operation FREE
+        K-)H: tool call c5 book_flight · passengers 2
+    else no result before the timeout
+        Note over K: attempt UNKNOWN → operation stays LOCKED
+        K->>U: "I can't confirm the first booking. Check it before I book again?"
+    end
