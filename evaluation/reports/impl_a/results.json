@@ -1,0 +1,4089 @@
+{
+ "agent": "impl_a",
+ "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+ "protocol": "PRISM-LOCAL/0",
+ "results": [
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 0.8426,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 97.64,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.75,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.7,
+    "turn_first_substantive_s": [
+     0.25,
+     1.15
+    ],
+    "unanswered_turns": [
+     "i4"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "backchannel_and_status_question",
+   "scenario_sha256": "9db3d4bbe789fac39c90c23a57c426ef45f12120f44b46625780c9787bc480c9",
+   "tags": [
+    "adversarial",
+    "text"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.75,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "content_free_interrupt",
+   "scenario_sha256": "5196f51dc7bc1c88a221814577dbe169ffdbc66cb87b3f911a5ee70b284f04bd",
+   "tags": [
+    "adversarial",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": false,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 110.0,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "deadline_governor",
+   "scenario_sha256": "2e3ff5ae7d6addf9493b1964b4708db3229ccc0bf17fa6bae16edcacce68a498",
+   "tags": [
+    "adversarial",
+    "timeout"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 0.8333,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "book_flight",
+      "slots": {
+       "flight_id": "6E-701",
+       "passengers": 1
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "side_effects_min:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 96.15,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.05,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.75,
+    "turn_first_substantive_s": [
+     0.75
+    ],
+    "unanswered_turns": [
+     "i4"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "duplicate_booking_request",
+   "scenario_sha256": "656d542ed0dcc5fcc48e9cb7b4f1c96d079c73d5256b8496d64773088443c81d",
+   "tags": [
+    "adversarial",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 0.0185,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "book_flight",
+      "slots": {
+       "flight_id": "6E-701",
+       "passengers": 1
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "side_effects_min:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 77.35,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 3.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 2.95,
+    "turn_first_substantive_s": [
+     2.95
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "failed_clean_then_ok_anomaly",
+   "scenario_sha256": "c31c9ca89c99806023c268cdc1548548da9144a851a8c5a95c543fe75e1bd892",
+   "tags": [
+    "adversarial",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 5.0,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "interrupt_1ms_after_completion",
+   "scenario_sha256": "4373fb53190667b8abc7a8da4163eade2c4f1512773a8ba776ca71d5247b2e16",
+   "tags": [
+    "adversarial",
+    "interruption",
+    "timing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:fix",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 5.0,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "interrupt_1ms_before_completion",
+   "scenario_sha256": "ee9138771bfc7852513d0432b5b492e3ed170678cf0a343422b36f031f5671f4",
+   "tags": [
+    "adversarial",
+    "interruption",
+    "timing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 6,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": [
+     "v9",
+     null
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "malformed_protocol_inputs",
+   "scenario_sha256": "9fc6f6f162ddd2e99f360f588b1c3a7e9826a88f5ee7dd10b927c165df50259a",
+   "tags": [
+    "adversarial",
+    "protocol"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "no_final_response",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": null,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "malformed_tool_arguments",
+   "scenario_sha256": "1f5a9c07e5e1722730628cdb938a1e980a1b87dedb4cda9643bdbc70f9a17c47",
+   "tags": [
+    "adversarial",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:broken:{}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "malformed_tool_manifest",
+   "scenario_sha256": "f57465bf3cd2885b070075cfa6f1e83eb7be7ba8a6e0805bcf0e4928e570b5c3",
+   "tags": [
+    "adversarial",
+    "protocol"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 0.9074,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "no_false_completion:{\"slots\": {\"passengers\": 2}}",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 98.61,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": null,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.55,
+    "turn_first_substantive_s": [
+     0.55
+    ],
+    "unanswered_turns": [
+     "i2"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "non_cancellable_state_changing",
+   "scenario_sha256": "4aa9afccf5b63a8208b0c72ff9a010a5d7ad9f6a5cab6ea3967710438655b2aa",
+   "tags": [
+    "adversarial",
+    "state_changing",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Sun",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"date\": \"Sun\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"date\": \"Fri\"}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.7,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.0,
+    "turn_first_substantive_s": [
+     0.0
+    ],
+    "unanswered_turns": [
+     "i3"
+    ]
+   },
+   "multimodal": true,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "older_evidence_vs_newer_user_value",
+   "scenario_sha256": "af16e30762361a5da22c362621785bdea97e3e62a4178eb925733f8408a7ebf0",
+   "tags": [
+    "adversarial",
+    "multimodal"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.0,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "result_exactly_at_timeout",
+   "scenario_sha256": "5b5c8b29a7474b8d6cdc232ec6cb6f03a751bcc05cf8264bc80f14947b0c422f",
+   "tags": [
+    "adversarial",
+    "timing",
+    "timeout"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "no_final_response",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 3,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": null,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 2,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "retry_budget_exhausted",
+   "scenario_sha256": "dac49c3142fcdb332eaa70aa41b7d5f6d1a55ea0856c3b638320cfdd636b0e92",
+   "tags": [
+    "adversarial",
+    "timeout"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 3.4,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.0,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "revert_value_reruns",
+   "scenario_sha256": "031b282b0e4b3e9e213c7372aed1b26c4ea5339f578ffb068f4abd1bc3b51311",
+   "tags": [
+    "adversarial",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 0.8704,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "no_final_response",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "same_idempotency_key:book_flight",
+     "keys": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 97.01,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": null,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.65,
+    "turn_first_substantive_s": [
+     0.65
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "state_changing_not_executed_retry",
+   "scenario_sha256": "39e4ea721f6decc8849f4062214b2b3e5dc97dbd26c9c56fc96189491f17a97f",
+   "tags": [
+    "adversarial",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 0.6481,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "book_flight",
+      "slots": {
+       "flight_id": "6E-701",
+       "passengers": 1
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "side_effects_min:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 91.88,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 4.05,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 1.25,
+    "turn_first_substantive_s": [
+     1.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "state_changing_timeout_then_late_ok",
+   "scenario_sha256": "269d34350f1c39a4e36d9f8c04939af73857f5075d7ca29947280dea08cca5aa",
+   "tags": [
+    "adversarial",
+    "state_changing",
+    "timeout"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 0.9444,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 98.72,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": null,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.45,
+    "turn_first_substantive_s": [
+     0.45
+    ],
+    "unanswered_turns": [
+     "i4"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "state_changing_unknown_error_no_retry",
+   "scenario_sha256": "815a29c4d34e3370ef0bb63a5210c88c737edca409ef5d846cbfe42770737029",
+   "tags": [
+    "adversarial",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:m",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 3.3,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.0,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "twin_still_pending",
+   "scenario_sha256": "a9813199c62209466b50cd36003711fbb06ca2589c0e88eac1f42a87809b7945",
+   "tags": [
+    "adversarial",
+    "interruption",
+    "timing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "GOI",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:m",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c2",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:g",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 3.3,
+    "interrupt_to_cancel_s": [
+     0.0,
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.0,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "two_interruptions_before_result",
+   "scenario_sha256": "44084ba4802a2adb83650b390f4d9d2bb91a236ec0c06857f12fe1e9765bed13",
+   "tags": [
+    "adversarial",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:w",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 3.2,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 1,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "unattributed_correction_marker",
+   "scenario_sha256": "12b233a0731722f4cddbe733d6134dcdb1f84cf81ef0f1435bb947965d6e8fff",
+   "tags": [
+    "adversarial",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "unknown_call_result",
+   "scenario_sha256": "9df9e072b744c0c9f9975990c788a298dd2ff48b11c2f939c6be9160a6f42727",
+   "tags": [
+    "adversarial",
+    "protocol"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "A_normal_search",
+   "scenario_sha256": "3a414592270db65c1b9016892496d7a8d251b64e21c732cc49294d2130d82fea",
+   "tags": [
+    "reference",
+    "text"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:fix",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "no_stale_rerun_after:fix",
+     "passed": true,
+     "stale": []
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 3.6,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "B_destination_correction",
+   "scenario_sha256": "85fe31d64cde6005d7d8dfd7422c3a258c259eed8dc51867f72f462fc3da0699",
+   "tags": [
+    "reference",
+    "text",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 1,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "C_timeout_retry",
+   "scenario_sha256": "89e1734bd03ec5ea28250252bdb0daa55b00f942dfefe5aadec9262cf84e6356",
+   "tags": [
+    "reference",
+    "text",
+    "timeout"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 0.7407,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "book_flight",
+      "slots": {
+       "flight_id": "6E-701",
+       "passengers": 2
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{\"passengers\": 2}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "side_effects_min:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:fix",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 96.11,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.0,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 1.0,
+    "turn_first_substantive_s": [
+     1.0
+    ],
+    "unanswered_turns": [
+     "i2"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "D2_booking_cancel_honoured",
+   "scenario_sha256": "cf0d489dc11589383b8b4785186d242756aab76aeeefd4d5430072d5862f8730",
+   "tags": [
+    "reference",
+    "text",
+    "interruption",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 0.9074,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "no_final_response",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{\"passengers\": 1}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:book_flight:{\"passengers\": 2}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:fix",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "side_effects_max:book_flight",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "no_false_completion:{\"slots\": {\"passengers\": 2}}",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 98.61,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": null,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.55,
+    "turn_first_substantive_s": [
+     0.55
+    ],
+    "unanswered_turns": [
+     "i2"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "D_booking_race",
+   "scenario_sha256": "4ebccb63e46ee5e6e5ee76d9a17bf09d13d50860bad8ba16acd7e12aa3b15936",
+   "tags": [
+    "reference",
+    "text",
+    "interruption",
+    "state_changing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 2,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"GOI\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:m1",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c2",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:g",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c3",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:m2",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 4.7,
+    "interrupt_to_cancel_s": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.0,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "E2_rapid_corrections_each_turn",
+   "scenario_sha256": "71903c51ee59e2119a05c9715bcbe86a731accdf3f1a15286c02a36533fba008",
+   "tags": [
+    "reference",
+    "text",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"GOI\"}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:m1",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "no_stale_rerun_after:m1",
+     "passed": true,
+     "stale": []
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 4.9,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "E_rapid_corrections_one_turn",
+   "scenario_sha256": "9cec0a61cc4004cb5eca89af9e0cad3e31fd1ac864820be2761e6da6b12f6de9",
+   "tags": [
+    "reference",
+    "text",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "get_weather",
+      "slots": {
+       "city": "Pune"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.75,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.25,
+    "turn_first_substantive_s": [
+     0.25
+    ],
+    "unanswered_turns": [
+     "i3"
+    ]
+   },
+   "multimodal": true,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "F2_evidence_after_goal_switch",
+   "scenario_sha256": "015e70f87db855dee1a63cd6cad373f6e2ba4ead1b172c56d0878beb56450366",
+   "tags": [
+    "reference",
+    "multimodal",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Sat",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"date\": \"Sat\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"date\": \"Fri\"}",
+     "count": 0,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "clarification",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.7,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.0,
+    "turn_first_substantive_s": [
+     0.0
+    ],
+    "unanswered_turns": [
+     "i3"
+    ]
+   },
+   "multimodal": true,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "F_evidence_after_correction",
+   "scenario_sha256": "488475bf51a2d3a3d8aeec57861d2f4e26c5eb3bfb331b4a92678ae6d47f4ea7",
+   "tags": [
+    "reference",
+    "multimodal",
+    "interruption"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 2,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 1.25,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.15,
+    "turn_first_substantive_s": [
+     0.15
+    ],
+    "unanswered_turns": [
+     "t1",
+     "t2"
+    ]
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "G_duplicate_input",
+   "scenario_sha256": "79e0556a371e134a83126bef7196db1a78b680b8623b6b605b2d0266a8cda73e",
+   "tags": [
+    "reference",
+    "text",
+    "protocol"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "cancelled:c1",
+     "latency_s": 0.0,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "invalidated_work_found:fix",
+     "note": "an invalidation expectation must refer to work in flight at that input",
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.75,
+    "interrupt_to_cancel_s": [
+     0.0
+    ],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "H2_same_time_correction_first",
+   "scenario_sha256": "86933f5937993f1ed8ec1abd2e48320f1ff784092616562b0dac1959b88e3012",
+   "tags": [
+    "reference",
+    "text",
+    "interruption",
+    "timing"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 1.0,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "cancelled": [],
+     "category": "interruption_recovery",
+     "check": "no_unnecessary_cancel",
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "no_stale_rerun_after:fix",
+     "passed": true,
+     "stale": []
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "internal_score": 100.0,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.75,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.125,
+    "turn_first_substantive_s": [
+     0.25,
+     0.0
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "H_same_time_result_first",
+   "scenario_sha256": "baeda495104947a361d7f1efc49606027ed301ae918f4bde2aad74a123bd222b",
+   "tags": [
+    "reference",
+    "text",
+    "interruption",
+    "timing"
+   ]
+  }
+ ]
+}

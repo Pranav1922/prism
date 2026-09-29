@@ -1,0 +1,92 @@
+{
+ "id": "D2_booking_cancel_honoured",
+ "description": "Same race, but the tool honours the cancel: the corrected booking (two passengers) is made exactly once.",
+ "tags": [
+  "reference",
+  "text",
+  "interruption",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 1.0,
+     "status": "ok",
+     "gen": "booking"
+    }
+   ],
+   "honors_cancel": true,
+   "cancel_latency": 0.05
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 0.8,
+   "type": "user.text",
+   "data": {
+    "text": "wait, two of us"
+   },
+   "id": "fix"
+  },
+  {
+   "t": 1.0,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "book_flight",
+    "slots": {
+     "passengers": 2
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {
+     "passengers": 2
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "cancels": [
+   {
+    "after": "fix",
+    "tool": "book_flight",
+    "args": {
+     "passengers": 1
+    }
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "min": 1,
+    "max": 1,
+    "args": {
+     "passengers": 2
+    }
+   }
+  }
+ }
+}

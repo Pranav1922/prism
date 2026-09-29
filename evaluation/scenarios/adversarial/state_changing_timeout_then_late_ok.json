@@ -1,0 +1,70 @@
+{
+ "id": "state_changing_timeout_then_late_ok",
+ "description": "The booking times out (outcome unknown, no blind retry), then its late OK arrives: exactly one side effect, then a truthful completion.",
+ "tags": [
+  "adversarial",
+  "state_changing",
+  "timeout"
+ ],
+ "manifest": {
+  "use": "flights",
+  "overrides": {
+   "book_flight": {
+    "timeout_s": 1.0
+   }
+  }
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 3.5,
+     "status": "ok",
+     "gen": "booking"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   }
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "book_flight",
+    "slots": {
+     "passengers": 1
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {},
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "min": 1,
+    "max": 1
+   }
+  },
+  "clarify": {
+   "min": 1
+  }
+ }
+}

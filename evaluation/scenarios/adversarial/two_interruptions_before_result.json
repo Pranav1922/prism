@@ -1,0 +1,101 @@
+{
+ "id": "two_interruptions_before_result",
+ "description": "Two corrections, each closing its turn, before any result arrives.",
+ "tags": [
+  "adversarial",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "actually, to Mumbai"
+   },
+   "id": "m"
+  },
+  {
+   "t": 1.1,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.2,
+   "type": "user.text",
+   "data": {
+    "text": "no, Goa"
+   },
+   "id": "g"
+  },
+  {
+   "t": 1.3,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "GOI"
+    }
+   }
+  },
+  "cancels": [
+   {
+    "after": "m",
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   },
+   {
+    "after": "g",
+    "tool": "search_flights",
+    "args": {
+     "destination": "BOM"
+    }
+   }
+  ],
+  "not_grounded_on": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   },
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "BOM"
+    }
+   }
+  ]
+ }
+}

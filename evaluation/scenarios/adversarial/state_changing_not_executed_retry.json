@@ -1,0 +1,60 @@
+{
+ "id": "state_changing_not_executed_retry",
+ "description": "The booking fails explicitly without executing: retried once with the same idempotency key, then stops.",
+ "tags": [
+  "adversarial",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 0.2,
+     "status": "error",
+     "executed": false
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   }
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "required": false
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {},
+    "min": 2,
+    "max": 2
+   }
+  ],
+  "same_idempotency_key": [
+   "book_flight"
+  ],
+  "side_effects": {
+   "book_flight": {
+    "max": 0
+   }
+  },
+  "clarify": {
+   "min": 1
+  }
+ }
+}

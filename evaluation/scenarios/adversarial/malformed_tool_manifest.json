@@ -1,0 +1,82 @@
+{
+ "id": "malformed_tool_manifest",
+ "description": "A manifest with a broken tool schema and a duplicate tool: bad entries are quarantined, the rest works.",
+ "tags": [
+  "adversarial",
+  "protocol"
+ ],
+ "manifest": {
+  "use": "flights",
+  "extra": [
+   {
+    "name": "broken",
+    "parameters": {
+     "type": "object",
+     "properties": {
+      "x": {
+       "type": 7
+      }
+     }
+    }
+   },
+   {
+    "name": "search_flights",
+    "parameters": {
+     "type": "object"
+    }
+   }
+  ]
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "DEL"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    },
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "broken",
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "protocol_errors": 0
+ }
+}

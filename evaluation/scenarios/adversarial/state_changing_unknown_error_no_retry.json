@@ -1,0 +1,65 @@
+{
+ "id": "state_changing_unknown_error_no_retry",
+ "description": "The booking fails with unknown execution: never retried, even when the user asks again.",
+ "tags": [
+  "adversarial",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 0.2,
+     "status": "error",
+     "executed": null
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   }
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "book it again"
+   }
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {},
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "max": 0
+   }
+  },
+  "clarify": {
+   "min": 1
+  }
+ }
+}

@@ -1,0 +1,57 @@
+{
+ "id": "retry_budget_exhausted",
+ "description": "The search never answers: two retries after timeouts, then an honest clarification; no answer claimed.",
+ "tags": [
+  "adversarial",
+  "timeout"
+ ],
+ "manifest": {
+  "use": "flights",
+  "overrides": {
+   "search_flights": {
+    "timeout_s": 0.5
+   }
+  }
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": null
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "required": false
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    },
+    "min": 3,
+    "max": 3
+   }
+  ],
+  "clarify": {
+   "min": 1
+  }
+ }
+}

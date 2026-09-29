@@ -3,16 +3,18 @@
 ## Current implementation status
 
 **Phase 1 complete: deterministic runtime foundation** ([details](docs/PHASE1_IMPLEMENTATION.md)).
-**Phase 2 complete: asynchronous runtime** ([report](docs/PHASE2_RUNTIME.md)): concurrent planner and perception workers, advisory cancellation, timeouts, failure events, live and manual timers, thread-safe submission; the kernel is still the only state writer. Next: the protocol adapter ([plan](docs/PHASE2_PLAN.md)).
+**Phase 2 complete: asynchronous runtime** ([report](docs/PHASE2_RUNTIME.md)): concurrent planner and perception workers, advisory cancellation, timeouts, failure events, live and manual timers, thread-safe submission; the kernel is still the only state writer.
+**Phase 3 complete: protocol adapter + black-box evaluation baseline** ([report](docs/PHASE3_PROTOCOL_ADAPTER.md)): the local protocol **PRISM-LOCAL/0** (ours, *not* Samsung's), ingress/egress adapters, a lockstep stdio agent, a black-box harness with a mock tool world, 34 scenarios, and internal PRISM-style metrics. Baseline: 34/34 scenarios pass, mean internal score 98.6 ([report](evaluation/reports/impl_a/report.md)). Next: fast understanding ([plan](docs/PHASE2_PLAN.md)).
 
 - **What works:** a single-writer session kernel with supersession, cancellation, result admission, the state-changing operation ledger, a full journal and byte-identical replay. It runs against a local deterministic scenario simulator with scripted tools, planner and perception.
-- **Tests:** 86 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in both the simulator and the async runtime.
-- **Not yet:** the protocol adapter and local harness, fast understanding from schemas, real planner/ASR/vision backends, response wording, evaluation engine, Docker.
+- **Tests:** 204 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in the simulator and the async runtime.
+- **Not yet:** fast understanding from schemas, real planner/ASR/vision backends, response policy (acknowledgements for state-changing work, status answers), live wall-clock harness mode, Docker. The official Samsung wire protocol is unavailable; only `agent/adapter/` will change when it arrives.
 
 ```sh
 uv venv --python 3.12 .venv && uv pip install -e ".[dev]"
 python -m pytest                 # full suite
 python -m agent.scenario B       # timeline: correction mid-search, stale result rejected
+python -m evaluation.run all --agent impl_a   # black-box evaluation (INTERNAL PRISM-style metrics)
 ```
 
 ## Architecture

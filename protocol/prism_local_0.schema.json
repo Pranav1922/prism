@@ -1,0 +1,518 @@
+{
+  "$id": "prism_local_0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "harness_input": {
+    "clock.tick": {
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "manifest": {
+      "additionalProperties": false,
+      "properties": {
+        "tools": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "tools"
+      ],
+      "type": "object"
+    },
+    "session.end": {
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "session.start": {
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "tool.result": {
+      "additionalProperties": false,
+      "properties": {
+        "call_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "data": {},
+        "executed": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "error",
+            "cancelled"
+          ]
+        }
+      },
+      "required": [
+        "call_id",
+        "status"
+      ],
+      "type": "object"
+    },
+    "user.audio": {
+      "additionalProperties": false,
+      "properties": {
+        "duration_s": {
+          "minimum": 0,
+          "type": "number"
+        },
+        "ref": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "type": "object"
+    },
+    "user.frame": {
+      "additionalProperties": false,
+      "properties": {
+        "ref": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref"
+      ],
+      "type": "object"
+    },
+    "user.interrupt": {
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "user.text": {
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "type": "object"
+    },
+    "user.turn_end": {
+      "additionalProperties": false,
+      "type": "object"
+    }
+  },
+  "input_envelope": {
+    "additionalProperties": false,
+    "properties": {
+      "data": {
+        "type": "object"
+      },
+      "id": {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+      },
+      "t": {
+        "minimum": 0,
+        "type": "number"
+      },
+      "type": {
+        "type": "string"
+      },
+      "v": {
+        "const": "PRISM-LOCAL/0"
+      }
+    },
+    "required": [
+      "v",
+      "id",
+      "t",
+      "type",
+      "data"
+    ],
+    "type": "object"
+  },
+  "output": {
+    "agent.ready": {
+      "additionalProperties": false,
+      "properties": {
+        "next_wakeup": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "next_wakeup"
+      ],
+      "type": "object"
+    },
+    "clarify": {
+      "additionalProperties": false,
+      "properties": {
+        "slots": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "text": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ],
+      "type": "object"
+    },
+    "protocol.error": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "type": "object"
+    },
+    "response.final": {
+      "additionalProperties": false,
+      "properties": {
+        "complete": {
+          "type": "boolean"
+        },
+        "grounded_on": {
+          "items": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "snapshot": {
+          "additionalProperties": false,
+          "properties": {
+            "intent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "slots": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "intent",
+            "slots"
+          ],
+          "type": "object"
+        },
+        "text": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "snapshot"
+      ],
+      "type": "object"
+    },
+    "speech": {
+      "additionalProperties": false,
+      "properties": {
+        "act": {
+          "enum": [
+            "ack",
+            "narration",
+            "filler",
+            "answer",
+            "confirm"
+          ]
+        },
+        "text": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "act"
+      ],
+      "type": "object"
+    },
+    "state.snapshot": {
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": {
+          "additionalProperties": false,
+          "properties": {
+            "intent": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "slots": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "intent",
+            "slots"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "snapshot"
+      ],
+      "type": "object"
+    },
+    "tool.call": {
+      "additionalProperties": false,
+      "properties": {
+        "args": {
+          "type": "object"
+        },
+        "call_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "idempotency_key": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "tool": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id",
+        "tool",
+        "args"
+      ],
+      "type": "object"
+    },
+    "tool.cancel": {
+      "additionalProperties": false,
+      "properties": {
+        "call_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "call_id"
+      ],
+      "type": "object"
+    }
+  },
+  "output_envelope": {
+    "additionalProperties": false,
+    "properties": {
+      "cause": {
+        "items": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "data": {
+        "type": "object"
+      },
+      "id": {
+        "maxLength": 128,
+        "minLength": 1,
+        "type": "string"
+      },
+      "t": {
+        "minimum": 0,
+        "type": "number"
+      },
+      "type": {
+        "enum": [
+          "agent.ready",
+          "clarify",
+          "protocol.error",
+          "response.final",
+          "speech",
+          "state.snapshot",
+          "tool.call",
+          "tool.cancel"
+        ]
+      },
+      "v": {
+        "const": "PRISM-LOCAL/0"
+      }
+    },
+    "required": [
+      "v",
+      "id",
+      "t",
+      "type",
+      "data",
+      "cause"
+    ],
+    "type": "object"
+  },
+  "title": "PRISM-LOCAL/0 (local project protocol, not the Samsung evaluation protocol)",
+  "version": "PRISM-LOCAL/0",
+  "worker_input": {
+    "worker.evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "claims": {
+          "additionalProperties": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {},
+              {
+                "maximum": 1,
+                "minimum": 0,
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "type": "object"
+        },
+        "frame_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "req_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "req_id",
+        "frame_id",
+        "claims"
+      ],
+      "type": "object"
+    },
+    "worker.perception_failed": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "req_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "req_id",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "worker.proposal": {
+      "additionalProperties": false,
+      "properties": {
+        "based_on_seq": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "proposal": {
+          "type": "object"
+        },
+        "req_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "req_id",
+        "based_on_seq",
+        "proposal"
+      ],
+      "type": "object"
+    },
+    "worker.proposal_failed": {
+      "additionalProperties": false,
+      "properties": {
+        "based_on_seq": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "req_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "req_id",
+        "based_on_seq",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "worker.transcript": {
+      "additionalProperties": false,
+      "properties": {
+        "req_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "source_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "req_id",
+        "source_id",
+        "text"
+      ],
+      "type": "object"
+    }
+  }
+}

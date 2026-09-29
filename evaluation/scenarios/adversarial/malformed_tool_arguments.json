@@ -1,0 +1,41 @@
+{
+ "id": "malformed_tool_arguments",
+ "description": "Understanding yields an invalid argument ('two' for an integer): nothing is dispatched; the agent asks.",
+ "tags": [
+  "adversarial",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {},
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-702 for two"
+   }
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "required": false
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "clarify": {
+   "min": 1
+  }
+ }
+}

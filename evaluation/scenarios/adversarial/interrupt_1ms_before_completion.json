@@ -1,0 +1,77 @@
+{
+ "id": "interrupt_1ms_before_completion",
+ "description": "Correction 1 ms before the search completes.",
+ "tags": [
+  "adversarial",
+  "interruption",
+  "timing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 2.749,
+   "type": "user.text",
+   "data": {
+    "text": "actually, to Mumbai"
+   },
+   "id": "fix"
+  },
+  {
+   "t": 3.0,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "BOM"
+    }
+   }
+  },
+  "cancels": [
+   {
+    "after": "fix",
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ],
+  "not_grounded_on": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,66 @@
+{
+  "_comment": "Implementation A only. Scripted fast-understanding annotations and planner/perception outputs, keyed by utterance / media ref. Replaced by real understanding (Phase 3) and planning (Phase 4). Never sent on the wire.",
+  "planner_latency": 0.25,
+  "perception_latency": 1.5,
+  "understanding": {
+    "actually, to Mumbai": {"class": "CORRECTION", "writes": {"destination": "BOM"}},
+    "no, Mumbai": {"class": "CORRECTION", "writes": {"destination": "BOM"}},
+    "no wait, Goa": {"class": "CORRECTION", "writes": {"destination": "GOI"}},
+    "actually Mumbai": {"class": "CORRECTION", "writes": {"destination": "BOM"}},
+    "no, Goa": {"class": "CORRECTION", "writes": {"destination": "GOI"}},
+    "no, Delhi after all": {"class": "CORRECTION", "writes": {"destination": "DEL"}},
+    "wait, two of us": {"class": "CORRECTION", "writes": {"passengers": 2}},
+    "the date is Saturday": {"class": "CORRECTION", "writes": {"date": "Sat"}},
+    "forget it, weather in Pune": {"class": "GOAL_SWITCH"},
+    "how long will this take?": {"class": "STATUS_QUERY"},
+    "no no, wait": {"class": "CORRECTION"},
+    "on Sunday": {"class": "ANSWER", "writes": {"date": "Sun"}}
+  },
+  "planner": {
+    "find flights from Bangalore to Delhi on Friday": {
+      "intent": "search_flights", "slot_writes": {"origin": "BLR", "destination": "DEL", "date": "Fri"},
+      "graph": [{"node_id": "n1", "tool": "search_flights",
+                 "args": {"origin": {"$slot": "origin"}, "destination": {"$slot": "destination"}, "date": {"$slot": "date"}}}]},
+    "actually, to Mumbai": {"intent": "search_flights", "slot_writes": {"destination": "BOM"}},
+    "no, Mumbai": {"intent": "search_flights", "slot_writes": {"destination": "BOM"}},
+    "no wait, Goa": {"intent": "search_flights", "slot_writes": {"destination": "GOI"}},
+    "actually Mumbai": {"intent": "search_flights", "slot_writes": {"destination": "BOM"}},
+    "no, Mumbai no wait, Goa actually Mumbai": {"intent": "search_flights", "slot_writes": {"destination": "BOM"}},
+    "no, Goa": {"intent": "search_flights", "slot_writes": {"destination": "GOI"}},
+    "no, Delhi after all": {"intent": "search_flights", "slot_writes": {"destination": "DEL"}},
+    "no no, wait": {"intent": "search_flights"},
+    "book flight 6E-701": {
+      "intent": "book_flight", "slot_writes": {"flight_id": "6E-701", "passengers": 1},
+      "graph": [{"node_id": "b1", "tool": "book_flight",
+                 "args": {"flight_id": {"$slot": "flight_id"}, "passengers": {"$slot": "passengers"}}}]},
+    "book it again": {
+      "intent": "book_flight", "slot_writes": {"flight_id": "6E-701", "passengers": 1},
+      "graph": [{"node_id": "b1", "tool": "book_flight",
+                 "args": {"flight_id": {"$slot": "flight_id"}, "passengers": {"$slot": "passengers"}}}]},
+    "wait, two of us": {"intent": "book_flight", "slot_writes": {"passengers": 2}},
+    "book flight 6E-702 for two": {
+      "intent": "book_flight", "slot_writes": {"flight_id": "6E-702", "passengers": "two"},
+      "graph": [{"node_id": "b1", "tool": "book_flight",
+                 "args": {"flight_id": {"$slot": "flight_id"}, "passengers": {"$slot": "passengers"}}}]},
+    "find flights from Bangalore to Delhi on the date in this photo": {
+      "intent": "search_flights", "slot_writes": {"origin": "BLR", "destination": "DEL"},
+      "graph": [{"node_id": "n1", "tool": "search_flights",
+                 "args": {"origin": {"$slot": "origin"}, "destination": {"$slot": "destination"}, "date": {"$slot": "date"}}}]},
+    "the date is Saturday": {"intent": "search_flights", "slot_writes": {"date": "Sat"}},
+    "forget it, weather in Pune": {
+      "intent": "get_weather", "slot_writes": {"city": "Pune"},
+      "graph": [{"node_id": "w1", "tool": "get_weather", "args": {"city": {"$slot": "city"}}}]},
+    "trip from Bangalore to Delhi": {
+      "intent": "search_flights", "slot_writes": {"origin": "BLR", "destination": "DEL"},
+      "graph": [{"node_id": "n1", "tool": "search_flights",
+                 "args": {"origin": {"$slot": "origin"}, "destination": {"$slot": "destination"}, "date": {"$slot": "date"}}}]},
+    "on Sunday": {"intent": "search_flights", "slot_writes": {"date": "Sun"}}
+  },
+  "perception": {
+    "frames": {
+      "img1": {"date": ["Fri", 0.93]},
+      "img2": {"date": ["Fri", 0.99], "origin": ["BLR", 0.99]}
+    },
+    "transcripts": {}
+  }
+}

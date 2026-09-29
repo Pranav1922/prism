@@ -1,0 +1,13 @@
+{"id": "B_destination_correction", "description": "User changes the destination while the search runs; the old search is cancelled and its late result must not be used.",
+ "tags": ["reference", "text", "interruption"], "manifest": {"use": "flights"},
+ "world": {"search_flights": {"behaviors": [{"latency": 2.0, "status": "ok", "gen": "flights"}], "honors_cancel": false}},
+ "inputs": [{"t": 0.1, "id": "ask", "type": "user.text", "data": {"text": "find flights from Bangalore to Delhi on Friday"}},
+            {"t": 0.5, "id": "ask_end", "type": "user.turn_end"},
+            {"t": 1.4, "id": "fix", "type": "user.text", "data": {"text": "actually, to Mumbai"}},
+            {"t": 1.6, "id": "fix_end", "type": "user.turn_end"}],
+ "horizon": 30,
+ "expect": {"final": {"complete": true, "snapshot": {"intent": "search_flights", "slots": {"destination": "BOM"}}},
+            "calls": [{"tool": "search_flights", "args": {"destination": "BOM"}, "min": 1, "max": 1}],
+            "cancels": [{"after": "fix", "tool": "search_flights", "args": {"destination": "DEL"}}],
+            "no_calls_after": [{"after": "fix", "tool": "search_flights", "args": {"destination": "DEL"}}],
+            "not_grounded_on": [{"tool": "search_flights", "args": {"destination": "DEL"}}]}}

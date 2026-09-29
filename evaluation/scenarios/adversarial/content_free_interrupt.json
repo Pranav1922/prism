@@ -1,0 +1,52 @@
+{
+ "id": "content_free_interrupt",
+ "description": "A barge-in signal with no words: nothing cancelled; the hold clears and the answer still comes.",
+ "tags": [
+  "adversarial",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.interrupt"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "DEL"
+    }
+   }
+  },
+  "no_cancels": true
+ }
+}

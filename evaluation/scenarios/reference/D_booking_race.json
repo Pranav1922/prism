@@ -1,0 +1,99 @@
+{
+ "id": "D_booking_race",
+ "description": "A correction arrives while the booking runs; the tool ignores the cancel and books anyway. Exactly one side effect, truthful clarification, never a false 'two passengers' completion.",
+ "tags": [
+  "reference",
+  "text",
+  "interruption",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 1.0,
+     "status": "ok",
+     "gen": "booking"
+    }
+   ],
+   "honors_cancel": false
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 0.8,
+   "type": "user.text",
+   "data": {
+    "text": "wait, two of us"
+   },
+   "id": "fix"
+  },
+  {
+   "t": 1.0,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "required": false
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {
+     "passengers": 1
+    },
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "book_flight",
+    "args": {
+     "passengers": 2
+    },
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "cancels": [
+   {
+    "after": "fix",
+    "tool": "book_flight",
+    "args": {
+     "passengers": 1
+    }
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "max": 1
+   }
+  },
+  "clarify": {
+   "min": 1
+  },
+  "final_forbidden": [
+   {
+    "slots": {
+     "passengers": 2
+    }
+   }
+  ]
+ }
+}

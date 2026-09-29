@@ -1,0 +1,9 @@
+{"id": "A_normal_search", "description": "Plain search: request, result, grounded final answer.",
+ "tags": ["reference", "text"], "manifest": {"use": "flights"},
+ "world": {"search_flights": {"behaviors": [{"latency": 0.5, "status": "ok", "gen": "flights"}]}},
+ "inputs": [{"t": 0.1, "id": "ask", "type": "user.text", "data": {"text": "find flights from Bangalore to Delhi on Friday"}},
+            {"t": 0.5, "id": "ask_end", "type": "user.turn_end"}],
+ "horizon": 30,
+ "expect": {"final": {"complete": true, "snapshot": {"intent": "search_flights", "slots": {"origin": "BLR", "destination": "DEL", "date": "Fri"}}},
+            "calls": [{"tool": "search_flights", "args": {"destination": "DEL"}, "min": 1, "max": 1}],
+            "no_cancels": true}}

@@ -65,6 +65,16 @@ class Scheduler:
     def disarm(self, timer_id: str) -> None:
         self._live.pop(timer_id, None)
 
+    def peek(self) -> float | None:
+        """Time of the next live delivery (dead timer instances are discarded), or None."""
+        while self._heap:
+            _, _, _, event = self._heap[0]
+            if event.kind is Kind.TIMER and self._live.get(event.payload["timer_id"]) != event.payload["due_t"]:
+                heapq.heappop(self._heap)
+                continue
+            return self._heap[0][0]
+        return None
+
     def pop(self) -> Event | None:
         while self._heap:
             t, _, _, event = heapq.heappop(self._heap)

@@ -1,0 +1,87 @@
+{
+ "id": "F_evidence_after_correction",
+ "description": "A photo's date arrives after the user already corrected the date: the user's value is used and the conflict is clarified.",
+ "tags": [
+  "reference",
+  "multimodal",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on the date in this photo"
+   }
+  },
+  {
+   "t": 0.2,
+   "type": "user.frame",
+   "data": {
+    "ref": "img1"
+   }
+  },
+  {
+   "t": 0.4,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "the date is Saturday"
+   }
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "date": "Sat"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "date": "Sat"
+    },
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "search_flights",
+    "args": {
+     "date": "Fri"
+    },
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "clarify": {
+   "min": 1
+  }
+ }
+}

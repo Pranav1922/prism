@@ -1,0 +1,72 @@
+{
+ "id": "duplicate_booking_request",
+ "description": "The user asks for the same booking again after it completed: no second booking.",
+ "tags": [
+  "adversarial",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "booking"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   }
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 2.0,
+   "type": "user.text",
+   "data": {
+    "text": "book it again"
+   }
+  },
+  {
+   "t": 2.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "book_flight",
+    "slots": {
+     "passengers": 1
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {},
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "min": 1,
+    "max": 1
+   }
+  }
+ }
+}

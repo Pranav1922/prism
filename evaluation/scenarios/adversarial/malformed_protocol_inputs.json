@@ -1,0 +1,82 @@
+{
+ "id": "malformed_protocol_inputs",
+ "description": "Malformed JSON, wrong version, missing id, unknown type, invalid payload and a timestamp regression are all rejected; the session continues normally.",
+ "tags": [
+  "adversarial",
+  "protocol"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.05,
+   "raw": "this is not json"
+  },
+  {
+   "t": 0.06,
+   "raw": "{\"v\": \"PRISM-LOCAL/9\", \"id\": \"v9\", \"t\": 0.06, \"type\": \"user.turn_end\", \"data\": {}}"
+  },
+  {
+   "t": 0.07,
+   "raw": "{\"v\": \"PRISM-LOCAL/0\", \"t\": 0.07, \"type\": \"user.turn_end\", \"data\": {}}"
+  },
+  {
+   "t": 0.08,
+   "raw": "{\"v\": \"PRISM-LOCAL/0\", \"id\": \"u9\", \"t\": 0.08, \"type\": \"user.dance\", \"data\": {}}"
+  },
+  {
+   "t": 0.09,
+   "raw": "{\"v\": \"PRISM-LOCAL/0\", \"id\": \"e9\", \"t\": 0.09, \"type\": \"user.text\", \"data\": {\"text\": \"\"}}"
+  },
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.3,
+   "raw": "{\"v\": \"PRISM-LOCAL/0\", \"id\": \"r1\", \"t\": 0.02, \"type\": \"user.text\", \"data\": {\"text\": \"regressed\"}}"
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "DEL"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "protocol_errors": 6
+ }
+}

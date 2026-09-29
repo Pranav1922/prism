@@ -1,0 +1,87 @@
+{
+ "id": "older_evidence_vs_newer_user_value",
+ "description": "A photo's date is analysed after the user stated a different date: the user's value wins, the conflict is clarified, agreeing evidence changes nothing.",
+ "tags": [
+  "adversarial",
+  "multimodal"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "trip from Bangalore to Delhi"
+   }
+  },
+  {
+   "t": 0.2,
+   "type": "user.frame",
+   "data": {
+    "ref": "img2"
+   }
+  },
+  {
+   "t": 0.4,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "on Sunday"
+   }
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "date": "Sun",
+     "origin": "BLR"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "date": "Sun"
+    },
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "search_flights",
+    "args": {
+     "date": "Fri"
+    },
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "clarify": {
+   "min": 1
+  }
+ }
+}

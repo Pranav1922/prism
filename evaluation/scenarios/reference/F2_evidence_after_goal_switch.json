@@ -1,0 +1,76 @@
+{
+ "id": "F2_evidence_after_goal_switch",
+ "description": "The user switches goal while the photo is analysed: the late evidence must not touch the new goal.",
+ "tags": [
+  "reference",
+  "multimodal",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "get_weather": {
+   "behaviors": [
+    {
+     "latency": 0.3,
+     "status": "ok",
+     "gen": "weather"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on the date in this photo"
+   }
+  },
+  {
+   "t": 0.2,
+   "type": "user.frame",
+   "data": {
+    "ref": "img1"
+   }
+  },
+  {
+   "t": 0.4,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "forget it, weather in Pune"
+   }
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "get_weather",
+    "slots": {
+     "city": "Pune"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "clarify": {
+   "max": 0
+  }
+ }
+}

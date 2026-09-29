@@ -323,4 +323,5 @@ A phase is complete only when:
 | Phase | Status | Report |
 |---|---|---|
 | 2: Real runtime | **complete** (86 tests, benchmarked) | [`PHASE2_RUNTIME.md`](PHASE2_RUNTIME.md) |
-| 8: Protocol adapter | next | — |
+| 8 + 9/5 + 10 (first version): protocol adapter, black-box harness, tool world, evaluator | **complete** (204 tests; 34/34 scenarios; benchmarked) | [`PHASE3_PROTOCOL_ADAPTER.md`](PHASE3_PROTOCOL_ADAPTER.md) |
+| 3: Fast understanding | next (awaiting go-ahead) | — |

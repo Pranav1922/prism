@@ -1,0 +1,69 @@
+{
+ "id": "failed_clean_then_ok_anomaly",
+ "description": "The tool says 'not executed', the agent retries, then the first attempt's OK arrives anyway: one real side effect, reported truthfully.",
+ "tags": [
+  "adversarial",
+  "state_changing"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 0.2,
+     "status": "error",
+     "executed": false,
+     "followup": {
+      "after": 2.5,
+      "status": "ok",
+      "gen": "booking"
+     }
+    },
+    {
+     "latency": null
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "book flight 6E-701"
+   }
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "book_flight",
+    "slots": {
+     "passengers": 1
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {},
+    "min": 2,
+    "max": 2
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "min": 1,
+    "max": 1
+   }
+  }
+ }
+}
