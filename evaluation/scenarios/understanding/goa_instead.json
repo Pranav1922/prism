@@ -1,0 +1,81 @@
+{
+ "id": "goa_instead",
+ "description": "A bare value with 'instead' ('wait, Goa instead').",
+ "tags": [
+  "understanding",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    },
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "wait, Goa instead"
+   },
+   "id": "fix"
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "GOI"
+    }
+   }
+  },
+  "cancels": [
+   {
+    "after": "fix",
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ],
+  "not_grounded_on": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ]
+ }
+}

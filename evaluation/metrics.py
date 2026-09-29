@@ -114,18 +114,20 @@ def evaluate(scenario: dict, trace: dict) -> dict:
 
     # ---------------------------------------------------------------- interruption recovery
     cancel_latencies: list[float] = []
+    info: list[dict] = []
     for spec in exp.get("cancels", []):
         apos, at = tr.input_pos[spec["after"]]
         in_flight = [cid for cid, c in tr.calls.items() if c["pos"] < apos and _match(c, spec)
-                     and not any(p < apos and s != "cancelled" for p, _, s in tr.results.get(cid, []))]
+                     and not any(p < apos and s != "cancelled" for p, _, s in tr.results.get(cid, []))
+                     and not any(p < apos for p, _ in tr.cancels.get(cid, []))]
         for cid in in_flight:
             later = [(p, t) for p, t in tr.cancels.get(cid, []) if p > apos]
             lat = (later[0][1] - at) if later else None
             if lat is not None:
                 cancel_latencies.append(lat)
             check("interruption_recovery", f"cancelled:{cid}", lat is not None and lat <= CANCEL_GRACE_S, latency_s=lat)
-        check("interruption_recovery", f"invalidated_work_found:{spec['after']}", bool(in_flight),
-              note="an invalidation expectation must refer to work in flight at that input")
+        if not in_flight:  # an agent that never started (or already stopped) the doomed work is not penalised
+            info.append({"note": "no matching work in flight", "after": spec["after"], "tool": spec["tool"]})
     if exp.get("no_cancels"):
         check("interruption_recovery", "no_unnecessary_cancel", not tr.cancels, cancelled=sorted(tr.cancels))
     for spec in exp.get("no_calls_after", []):
@@ -149,8 +151,12 @@ def evaluate(scenario: dict, trace: dict) -> dict:
             o["type"] in SUBSTANTIVE or (o["type"] == "speech" and o["data"]["act"] != "filler"))), None)
         if first is None:
             unanswered.append(m.get("id"))
+            if m.get("id") in exp.get("answer_turns", []):
+                turn_latencies.append(LATENCY_ZERO_S)  # a turn the user needed answered and never was
         else:
             turn_latencies.append(first[1] - t)
+        if m.get("id") in exp.get("answer_turns", []):
+            check("task_completion", f"turn_answered:{m.get('id')}", first is not None)
     rl_scores = [max(0.0, min(1.0, (LATENCY_ZERO_S - lat) / (LATENCY_ZERO_S - LATENCY_FULL_S))) for lat in turn_latencies]
 
     # ---------------------------------------------------------------- safety and protocol
@@ -218,5 +224,6 @@ def evaluate(scenario: dict, trace: dict) -> dict:
         },
         "naturalness": {"fillers": fillers, "speech_while_user_speaking": spoke_over, "repeated_utterances": repeats},
         "multimodal": "multimodal" in scenario.get("tags", []),
+        "info": info,
         "checks": checks,
     }

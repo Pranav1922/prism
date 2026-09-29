@@ -1,15 +1,82 @@
 [
-  {"name": "search_flights", "description": "Search flights",
-   "parameters": {"type": "object", "properties": {"origin": {"type": "string", "minLength": 1},
-                  "destination": {"type": "string", "minLength": 1}, "date": {"type": "string", "minLength": 1}},
-                  "required": ["origin", "destination", "date"], "additionalProperties": false},
-   "timeout_s": 5},
-  {"name": "book_flight", "description": "Book a flight", "effect": "state_changing",
-   "parameters": {"type": "object", "properties": {"flight_id": {"type": "string", "minLength": 1},
-                  "passengers": {"type": "integer", "minimum": 1}},
-                  "required": ["flight_id", "passengers"], "additionalProperties": false},
-   "timeout_s": 5},
-  {"name": "get_weather", "description": "Weather for a city",
-   "parameters": {"type": "object", "properties": {"city": {"type": "string", "minLength": 1}},
-                  "required": ["city"], "additionalProperties": false}}
+ {
+  "name": "search_flights",
+  "description": "Search flights",
+  "parameters": {
+   "type": "object",
+   "properties": {
+    "origin": {
+     "type": "string",
+     "pattern": "^[A-Z]{3}$",
+     "description": "IATA airport code, e.g. BOM for Mumbai"
+    },
+    "destination": {
+     "type": "string",
+     "pattern": "^[A-Z]{3}$",
+     "description": "IATA airport code, e.g. BOM for Mumbai"
+    },
+    "date": {
+     "type": "string",
+     "enum": [
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+      "Sun"
+     ],
+     "description": "day of the week"
+    }
+   },
+   "required": [
+    "origin",
+    "destination",
+    "date"
+   ],
+   "additionalProperties": false
+  },
+  "timeout_s": 5
+ },
+ {
+  "name": "book_flight",
+  "description": "Book a flight",
+  "effect": "state_changing",
+  "parameters": {
+   "type": "object",
+   "properties": {
+    "flight_id": {
+     "type": "string",
+     "minLength": 1
+    },
+    "passengers": {
+     "type": "integer",
+     "minimum": 1
+    }
+   },
+   "required": [
+    "flight_id",
+    "passengers"
+   ],
+   "additionalProperties": false
+  },
+  "timeout_s": 5
+ },
+ {
+  "name": "get_weather",
+  "description": "Weather for a city",
+  "parameters": {
+   "type": "object",
+   "properties": {
+    "city": {
+     "type": "string",
+     "minLength": 1
+    }
+   },
+   "required": [
+    "city"
+   ],
+   "additionalProperties": false
+  }
+ }
 ]

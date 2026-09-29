@@ -1,0 +1,74 @@
+{
+ "id": "goal_switch_paraphrase",
+ "description": "'never mind, what's the weather in Pune?' switches goal; no more flight work.",
+ "tags": [
+  "understanding",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  },
+  "get_weather": {
+   "behaviors": [
+    {
+     "latency": 0.3,
+     "status": "ok",
+     "gen": "weather"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "never mind, what's the weather in Pune?"
+   },
+   "id": "sw"
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "get_weather",
+    "slots": {
+     "city": "Pune"
+    }
+   }
+  },
+  "no_calls_after": [
+   {
+    "after": "sw",
+    "tool": "search_flights"
+   }
+  ]
+ }
+}

@@ -22,7 +22,7 @@ INTERNAL_WORDS = ("t0", "slot_writes", "graph", "writer_seq", "relevance", "SUPE
 
 def test_scenario_suite_is_large_enough_and_valid():
     assert len(ALL) >= 30
-    assert {p.parent.name for p in ALL} == {"reference", "adversarial"}
+    assert {p.parent.name for p in ALL} == {"reference", "adversarial", "understanding"}
     for p in ALL:
         load(p)
 
@@ -34,7 +34,10 @@ def test_scenarios_contain_no_agent_internals(path):
         assert f'"{word}' not in text, f"{path.name} mentions agent-internal '{word}'"
 
 
-@pytest.mark.parametrize("path", ALL, ids=[p.stem for p in ALL])
+GATED = [p for p in ALL if p.parent.name in ("reference", "adversarial")]  # understanding suite: after Phase 4 step 1
+
+
+@pytest.mark.parametrize("path", GATED, ids=[p.stem for p in GATED])
 def test_impl_a_passes_every_scenario_black_box(path):
     scenario = load(path)
     trace = harness.run(scenario, resolve("impl_a"))

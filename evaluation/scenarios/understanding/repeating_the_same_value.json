@@ -1,0 +1,75 @@
+{
+ "id": "repeating_the_same_value",
+ "description": "The user repeats the destination already being searched: the running search must not be cancelled.",
+ "tags": [
+  "understanding",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    },
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Mumbai on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.0,
+   "type": "user.text",
+   "data": {
+    "text": "to Mumbai, right"
+   },
+   "id": "same"
+  },
+  {
+   "t": 1.2,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "BOM"
+    }
+   }
+  },
+  "no_cancels": true,
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "BOM"
+    },
+    "min": 1,
+    "max": 1
+   }
+  ]
+ }
+}

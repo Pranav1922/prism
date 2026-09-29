@@ -1,0 +1,81 @@
+{
+ "id": "correction_with_immediate_turn_end",
+ "description": "The correction chunk and its end-of-turn arrive at the same instant.",
+ "tags": [
+  "understanding",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    },
+    {
+     "latency": 0.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   }
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 1.4,
+   "type": "user.text",
+   "data": {
+    "text": "no, make it Mumbai"
+   },
+   "id": "fix"
+  },
+  {
+   "t": 1.4,
+   "type": "user.turn_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "BOM"
+    }
+   }
+  },
+  "cancels": [
+   {
+    "after": "fix",
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ],
+  "not_grounded_on": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ]
+ }
+}

@@ -50,6 +50,7 @@ SCENARIO_SCHEMA = {
             "final_forbidden": {"type": "array", "items": {"type": "object"}},
             "protocol_errors": {"type": "integer", "minimum": 0},
             "same_idempotency_key": {"type": "array", "items": {"type": "string"}},
+            "answer_turns": {"type": "array", "items": {"type": "string"}},
         }},
     },
 }
