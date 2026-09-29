@@ -4,17 +4,20 @@
 
 **Phase 1 complete: deterministic runtime foundation** ([details](docs/PHASE1_IMPLEMENTATION.md)).
 **Phase 2 complete: asynchronous runtime** ([report](docs/PHASE2_RUNTIME.md)): concurrent planner and perception workers, advisory cancellation, timeouts, failure events, live and manual timers, thread-safe submission; the kernel is still the only state writer.
-**Phase 3 complete: protocol adapter + black-box evaluation baseline** ([report](docs/PHASE3_PROTOCOL_ADAPTER.md)): the local protocol **PRISM-LOCAL/0** (ours, *not* Samsung's), ingress/egress adapters, a lockstep stdio agent, a black-box harness with a mock tool world, 34 scenarios, and internal PRISM-style metrics. Baseline: 34/34 scenarios pass, mean internal score 98.6 ([report](evaluation/reports/impl_a/report.md)). Next: fast understanding ([plan](docs/PHASE2_PLAN.md)).
+**Phase 3 complete: protocol adapter + black-box evaluation baseline** ([report](docs/PHASE3_PROTOCOL_ADAPTER.md)): the local protocol **PRISM-LOCAL/0** (ours, *not* Samsung's), ingress/egress adapters, a lockstep stdio agent, a black-box harness with a mock tool world, 34 scenarios, and internal PRISM-style metrics. Baseline: 34/34 scenarios pass, mean internal score 98.6 ([report](evaluation/reports/impl_a/report.md)).
+**Phase 4 complete: fast understanding + response-relevant turn classification** ([report](docs/PHASE4_FAST_UNDERSTANDING.md)): a deterministic, bounded recogniser (`agent/understand_rules.py`) classifies every utterance (REQUEST, CORRECTION, GOAL_SWITCH, ANSWER, STATUS_QUERY, BACKCHANNEL) and extracts schema-valid slot changes from the tool manifest, with no scenario tables. Truthful status answers and acknowledgements. Internal black-box result: 47/47 scenarios pass (before: 41/47), interruption → cancel 0.00 s. Held-out corpus, first run: 97.8% classification, 4.4% unsafe (fixed; see report). Next: planner / deep reasoning ([plan](docs/PHASE2_PLAN.md)).
 
 - **What works:** a single-writer session kernel with supersession, cancellation, result admission, the state-changing operation ledger, a full journal and byte-identical replay. It runs against a local deterministic scenario simulator with scripted tools, planner and perception.
-- **Tests:** 204 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in the simulator and the async runtime.
-- **Not yet:** fast understanding from schemas, real planner/ASR/vision backends, response policy (acknowledgements for state-changing work, status answers), live wall-clock harness mode, Docker. The official Samsung wire protocol is unavailable; only `agent/adapter/` will change when it arrives.
+- **Tests:** 258 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in the simulator and the async runtime.
+- **Not yet:** real planner/ASR/vision backends, live wall-clock harness mode, Docker. The official Samsung wire protocol is unavailable; only `agent/adapter/` will change when it arrives.
 
 ```sh
 uv venv --python 3.12 .venv && uv pip install -e ".[dev]"
 python -m pytest                 # full suite
 python -m agent.scenario B       # timeline: correction mid-search, stale result rejected
 python -m evaluation.run all --agent impl_a   # black-box evaluation (INTERNAL PRISM-style metrics)
+python -m tests.understanding_corpus        # fast-understanding corpus (internal measurement)
+python -m scripts.bench_understanding       # recogniser latency
 ```
 
 ## Architecture

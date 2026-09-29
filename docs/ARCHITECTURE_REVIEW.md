@@ -863,6 +863,26 @@ v0.1 required user-originated provenance for state-changing calls (anti-injectio
 - v0.1 is archived verbatim in `archive/ARCHITECTURE_v0.1.md`.
 - This section and the final architecture below are the only normative statements of behaviour.
 
+### D11 — A goal switch withholds the flagged goal's re-dispatch (Phase 4, implementation evidence)
+
+**Evidence.** With real fast understanding, "never mind, what's the weather in Pune" is classified GOAL_SWITCH in its own step. The unattributed-marker rule (F5) supersedes the active goal's read-only calls, but the goal stays ACTIVE until the planner answers. INV-12 then forced an identical re-dispatch at turn close: a stale re-run of abandoned work.
+
+**Decision.**
+- A GOAL_SWITCH records `switch_pending = <active goal>` (rule `SWITCH.pending`).
+- Reconciliation does not dispatch for that goal while the flag is set.
+- The flag clears on the next structurally valid planner proposal (`SWITCH.answered`). That proposal either creates the new goal (the old one is suspended) or keeps the old one, which then re-dispatches normally.
+- INV-12 is exempt for the flagged goal. Nothing else changes; no model is awaited for the supersede or cancel.
+
+### D12 — An unfilled fast-path retraction is reverted (Phase 4, implementation evidence)
+
+**Evidence.** The recogniser may attribute a correction to a slot without being able to canonicalise the value (for example, "actually, to Mumbai" for an IATA-pattern slot). It then writes a **retraction**: the register is set to `None` (source T0), so the stale call leaves the desired set in the same step.
+
+If the planner, having seen that utterance, proposes no value for the slot, the register would stay empty and the task would stall.
+
+**Decision.** After applying a planner proposal whose `based_on_seq` is at least the retraction's `writer_seq`, and which did not write the slot, the kernel restores the previous non-`None` value from the register's history (source PLANNER, confirmed; rule `T0.retraction_reverted`). The planner is authoritative on attribution; the fast path must never leave a hole that nobody fills.
+
+**Term added.** A **retraction** is a T0 register write of `None` that marks a slot as "being changed, value not yet known".
+
 ---
 
 # FINAL ARCHITECTURE — APPROVED FOR IMPLEMENTATION
@@ -948,6 +968,7 @@ v0.1 required user-originated provenance for state-changing calls (anti-injectio
 - **Supersession policy S3.** Evaluated in the step of each user-input event:
   - A resolved CORRECTION writes registers, and the calls whose keys leave the desired key set are superseded.
   - A CORRECTION or GOAL_SWITCH marker without attribution supersedes the active goal's calls whose outcome is not known and whose tools are **read-only**.
+  - *(Phase 4)* "Without attribution" means that the fast path attributed the marker to no slot. An attributed correction whose value is not schema-valid writes a retraction (D12) instead, so only the calls that depend on that slot are superseded. A GOAL_SWITCH also sets `switch_pending` (D11).
   - BACKCHANNEL, ANSWER, STATUS_QUERY and plain REQUEST supersede nothing pre-emptively.
 - **Cancel emission** follows D7 for read-only and state-changing calls alike (D3).
 - **No supersession or cancel ever waits on a model.**
@@ -1033,7 +1054,7 @@ Each invariant is checked after every step in unit tests, journal replays and se
 | **INV-09** Stale-result rejection | A result is used (binding, `confirm`/`answer` grounding, snapshot value source) only if its call is DESIRED at the moment of use. The only reference to a SUPERSEDED call's result is reconciliation of its COMMITTED operation. | Every use in `step` records names a call; assert its relevance at that step. |
 | **INV-10** Outcome recording | Every result for a known `call_id` is recorded and moves the outcome only along the defined transitions, regardless of relevance. A result for an unknown `call_id` changes no state. | Transition table check; unknown-id fuzz. |
 | **INV-11** Cancel semantics | A `Cancel` for call *c* is emitted iff *c* becomes SUPERSEDED in this step while its outcome is not known, and (*c* is read-only or `cancellable` ≠ false). There is at most one cancel per call. No cancel is ever emitted for a call with a known outcome. No cancel changes any state except the journal. | Scan `out` vs relevance/outcome transitions. |
-| **INV-12** Read-only dispatch | After every step in which no user turn is open, every desired read-only key of the ACTIVE goal has exactly one DESIRED call, regardless of SUPERSEDED calls with the same key. No tool call is dispatched in a step during which a user turn is open. | Recompute; scan dispatches against turn state. |
+| **INV-12** Read-only dispatch | After every step in which no user turn is open, every desired read-only key of the ACTIVE goal has exactly one DESIRED call, regardless of SUPERSEDED calls with the same key. No tool call is dispatched in a step during which a user turn is open. Exception (D11): the ACTIVE goal flagged by `switch_pending` is exempt until the planner answers. | Recompute; scan dispatches against turn state. |
 | **INV-13** One unresolved attempt, never a second create | When a create attempt of an operation is dispatched, every earlier attempt of that operation has outcome FAILED_CLEAN. | Per operation, check attempt outcomes at each dispatch step. |
 | **INV-14** Commit barrier | Every state-changing dispatch happens in a step where: no user turn is open, `hold` is false, every slot its arguments read is confirmed, no pending clarification touches those slots, and its operation is FREE. | Assert predicates at every state-changing dispatch. |
 | **INV-15** Provenance | Every state-changing dispatch's goal traces through `caused_by` to at least one user-content event (text, transcript). No chain originates only from tool-result or evidence content. | Walk `caused_by` chains in the journal. |
