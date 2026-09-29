@@ -53,7 +53,7 @@ def main() -> None:
 
     samples = [line for _, line in lines if "manifest" not in line] * 500
     t_parse = []
-    for i, line in enumerate(samples):
+    for line in samples:
         ing = Ingress()
         t0 = time.perf_counter()
         ing.parse(line)
