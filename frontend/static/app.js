@@ -188,6 +188,7 @@ function onStep(r) {
       case "GOAL.create": addMoment(t, "plan", `New task: ${title(x.intent)}`, `Started by your request (input #${x.origin_seq}).`); break;
       case "GOAL.suspend": addMoment(t, "plan", "Previous task paused", x.goal_id); break;
       case "AUTH.confirmed": addMoment(t, "done", "You confirmed the exact operation", ""); break;
+      case "PROP.reply": addMoment(t, "plan", "Request not supported: nothing changed", "No tool offers that task; the agent said so, dispatched nothing and left the current task as it was."); break;
     }
   }
   const byUser = ev && (ev.kind === "UserText" || ev.kind === "Interrupt");
@@ -325,6 +326,11 @@ function renderNow(now) {
     detail = `Running for ${(now - Math.min(...running.map((c) => c.t_call))).toFixed(1)} s. Say or type a correction any time.`;
   } else if (openPlans.length) { tone = "plan"; kicker = "Planning"; head = "Working out what to do…"; detail = "The planner proposes; the kernel checks every proposal before anything runs."; }
   else if (waiting) { tone = "wait"; kicker = "Waiting for you"; head = waiting.text; detail = "Nothing that depends on this runs until you answer."; }
+  else if (S.speech.length && S.speech[S.speech.length - 1].kind === "narration" && (!final || S.speech[S.speech.length - 1].t > final.t)) {
+    const last = S.speech[S.speech.length - 1];
+    kicker = "Agent"; head = last.text;
+    detail = final ? "The completed task on the left is unchanged." : "";
+  }
   else if (final && final.act === "answer") { tone = "done"; kicker = "Answer"; head = final.text; detail = `Grounded on ${(final.grounded || []).join(", ") || "a committed operation"} · snapshot ${fmtSlots(final.snapshot?.slots)}`; }
   else if (S.status === "ended") { kicker = "Session ended"; head = S.verdict ? `Evaluator: ${S.verdict.passed ? "PASS" : "FAIL"} · internal score ${S.verdict.internal_score}` : "Session ended."; }
   else if (S.status === "running") { kicker = "Listening"; head = "Waiting for your next request."; }
@@ -581,7 +587,9 @@ function renderTask() {
         ${src ? `<div class="src ${r.source}" title="${esc(src[1])}">${esc(src[0])}${r.confirmed ? " · confirmed" : " · unconfirmed"}</div>` : `<div class="src">not given yet</div>`}
       </div></div>`;
   };
-  let html = `<div class="task-title">${esc(title(g.intent))}</div>
+  const pendingOpen = Object.values(S.tables.pending).some((p) => p.goal_id === g.goal_id && !p.resolved);
+  const completed = g.final_keys != null && !pendingOpen;
+  let html = `<div class="task-title">${esc(title(g.intent))}${completed ? ' <span class="done-badge">✓ completed</span>' : ""}</div>
     <div class="task-sub">task ${g.goal_id} · plan revision ${g.plan_rev} · ${(g.graph || []).length} step${(g.graph || []).length === 1 ? "" : "s"}: ${(g.graph || []).map((n) => words(n.tool)).join(" → ")}</div>`;
   if (order.includes("origin") && order.includes("destination")) {
     html += `<div class="route">${field("origin", true)}<div class="arrow">→</div>${field("destination", true)}</div>`;

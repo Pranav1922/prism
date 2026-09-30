@@ -757,6 +757,14 @@ class _Step:
             self.set_meta("switch_pending", None)
             self.rule("SWITCH.answered", req_id=req.req_id)
         intent = self.payload.get("intent")
+        clarify = self.payload.get("clarify")
+        if not intent and clarify and not clarify.get("slots") and not self.payload.get("slot_writes") \
+                and "graph" not in self.payload:
+            # a message, not a question about the current task ("I can't book a cab here"): say it, change nothing
+            if req.may_change:
+                self.reply_text = str(clarify["text"])
+            self.rule("PROP.reply", req_id=req.req_id)
+            return
         goal = active_goal(self.tx)
         switch = bool(intent) and (goal is None or goal.intent != intent or bool(self.payload.get("new_goal")))
         if switch and not (structure_ok and (goal is None or based >= (goal.origin_seq or 0))):

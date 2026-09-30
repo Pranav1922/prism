@@ -105,9 +105,25 @@ def test_booking_by_id_and_count_or_ask():
     assert p["slot_writes"] == {"flight_id": "6E-701"} and p["clarify"]["slots"] == ["passengers"]  # never assumes 1
 
 
-@pytest.mark.parametrize("turn", ["order me a large pizza", "which one is cheapest?", "tell me a joke"])
+@pytest.mark.parametrize("turn", ["which one is cheapest?", "tell me a joke"])
 def test_requests_no_tool_serves_are_not_planned(turn):
-    assert RulePlanner().plan(view_for(turn, setup=turn != "order me a large pizza"))[0] is None
+    assert RulePlanner().plan(view_for(turn, setup=True))[0] is None
+
+
+@pytest.mark.parametrize("turn,thing", [("order me a large pizza", "order a large pizza"), ("Book a cab from Bangalore Kapa", "book a cab"),
+                                        ("Book a car from Bangalore to Hyderabad", "book a car"), ("please rent a scooter", "rent a scooter")])
+def test_an_unsupported_task_gets_an_explicit_reply_and_no_tool(turn, thing):
+    for setup in (False, True):
+        p, why = RulePlanner().plan(view_for(turn, setup=setup))
+        assert why == "unsupported task" and "graph" not in p and p["intent"] is None and p["slot_writes"] == {}
+        assert p["clarify"]["slots"] == [] and f"can't {thing}" in p["clarify"]["text"]
+        assert "search flights" in p["clarify"]["text"]  # what IS available comes from the tool manifest
+
+
+@pytest.mark.parametrize("turn", ["book a cab to the airport", "book it for the car", "book a table for two"])
+def test_the_booking_verb_alone_never_selects_the_flight_booking_tool(turn):
+    p, _ = RulePlanner().plan(view_for(turn))
+    assert p is None or not any(n["tool"] == "book_flight" for n in p.get("graph", []))
 
 
 def test_mentioning_flights_never_selects_a_booking():

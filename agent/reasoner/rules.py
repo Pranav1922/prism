@@ -164,6 +164,41 @@ def _count(words: list[str]) -> int | None:
     return None
 
 
+ACTION_VERBS = {"book", "reserve", "order", "buy", "purchase", "rent", "hire", "call", "get", "send", "schedule",
+                "cancel", "pay", "find", "search", "show", "arrange", "request"}
+DETERMINERS = {"a", "an", "the", "me", "us", "my", "our", "some", "one", "please", "for"}
+BOUNDARY = {"from", "to", "for", "in", "at", "on", "with", "near", "by", "tomorrow", "today", "tonight", "please"}
+
+
+def _specific_value(text: str, tool: dict) -> bool:
+    """Evidence for THIS tool beyond a generic count ("for two" fits a table, a cab or a flight): e.g. a flight number."""
+    props = tool["parameters"].get("properties", {})
+    return any(props.get(k, {}).get("type") != "integer" for k in extract(text, tool["parameters"]))
+
+
+def _unsupported_task(text: str, tools: list[dict]) -> str | None:
+    """"Book a cab from ...": an action on an object no tool offers. Returns what to say, or None."""
+    words = _words(text)
+    verb_at = next((i for i, w in enumerate(words) if w in ACTION_VERBS), None)
+    if verb_at is None:
+        return None
+    obj: list[str] = []
+    for w in words[verb_at + 1:]:
+        if w in BOUNDARY and obj:
+            break
+        if w in DETERMINERS and not obj:
+            continue
+        obj.append(w)
+        if len(obj) == 3:
+            break
+    offered = set().union(*(_content(t) for t in tools)) if tools else set()
+    if not obj or offered & set(obj):
+        return None
+    can = ", ".join(t["name"].replace("_", " ") for t in tools) or "nothing"
+    return (f"Sorry, I can't {words[verb_at]} {'a ' if obj[0][0] not in 'aeiou' else 'an '}{' '.join(obj)}: "
+            f"there is no tool for that here. I can: {can}. Nothing was changed.")
+
+
 def _ask(slot: str, view: dict) -> str:
     """How to ask for one missing value, from its schema (so the user knows what a usable answer looks like)."""
     spec: dict = {}
@@ -217,6 +252,11 @@ class RulePlanner:
         scored = sorted(((i, t) for i, t in enumerate(tools) if _tool_score(t, words) > 0),
                         key=lambda it: (-_tool_score(it[1], words), it[0]))
         wanted = [t for _, t in scored]
+        # a side effect needs more than its verb: "book a cab" must never select book_flight. It also needs one of the
+        # tool's content words ("flight"), a value for it (a flight number), or a reference to current results.
+        refers = bool(ORDINALS.keys() & words or {"it", "that", "this"} & words) and bool(view.get("results"))
+        wanted = [t for t in wanted if t.get("effect") != "state_changing" or _content(t) & words
+                  or refers or _specific_value(text, t)]
         if any(t.get("effect") == "state_changing" for t in wanted):  # "book flight X" is not also a flight search
             acts = [t for t in wanted if t.get("effect") == "state_changing"]
             wanted = acts + [t for t in wanted if t not in acts and not (_content(t) & set().union(*map(_content, acts)))]
@@ -229,6 +269,11 @@ class RulePlanner:
                       or extract(text, t["parameters"])]
         writes: dict[str, Any] = {}
         graph: list[dict] = []
+        unsupported = _unsupported_task(text, tools)
+        if not wanted and unsupported and not any(p.get("asked") for p in view.get("pending") or []):
+            # a new task no tool serves: say so plainly; nothing is dispatched and the current task is left alone
+            return {"intent": None, "new_goal": False, "slot_writes": {},
+                    "clarify": {"text": unsupported, "slots": []}}, "unsupported task"
         if not wanted:  # no tool named: a continuation/correction of the current task
             if goal is None:
                 return None, "no tool matches the request"

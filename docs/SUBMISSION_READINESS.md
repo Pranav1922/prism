@@ -4,7 +4,7 @@
 |---|---|
 | Date | 2026-09-30 |
 | Scope | Implementation A (this repository), final integration |
-| Headline | **58/58 internal black-box scenarios pass** (mean 99.8). **Real speech recognition and real OCR** run in the demo. 396 tests pass on Python 3.12 and 3.10; ruff and mypy clean. The Docker image runs the whole suite on Linux. |
+| Headline | **58/58 internal black-box scenarios pass** (mean 99.8). **Real speech recognition and real OCR** run in the demo. 405 tests pass on Python 3.12 and 3.10; ruff and mypy clean. The Docker image runs the whole suite on Linux. |
 
 **Nothing here was tested with the Samsung evaluation kit.** It was not available (UNK-1).
 - PRISM-LOCAL/0 is this project's own local protocol, not Samsung's.
@@ -150,7 +150,7 @@ brew install tesseract                      # OCR, if missing
 .venv/bin/python demo/run_demo.py           # both demos + evaluator verdict (add --speak to hear it)
 
 # validation
-.venv/bin/python -m pytest                  # 396 tests
+.venv/bin/python -m pytest                  # 405 tests
 .venv/bin/python -m evaluation.run all --agent impl_a --out evaluation/reports/final
 .venv/bin/ruff check agent evaluation tests scripts && .venv/bin/mypy agent evaluation
 

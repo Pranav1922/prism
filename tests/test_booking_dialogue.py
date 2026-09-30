@@ -151,3 +151,36 @@ def test_the_live_agent_completes_the_booking_conversation():
     assert out[1][1]["slots"] == ["passengers"]
     call = next(d for k, d in out if k == "tool.call")
     assert call["tool"] == "book_flight" and call["args"] == {"flight_id": "6E-2020", "passengers": 2}
+
+
+@pytest.mark.parametrize("request_", ["Book a cab from Bangalore Kapa", "Book a car from Bangalore to Hyderabad"])
+def test_an_unsupported_task_after_the_booking_is_answered_and_changes_nothing(request_):
+    sim = converse("Indigo SC 2020", "Two people", request_)
+    assert bookings(sim) == [{"flight_id": "6E-2020", "passengers": 2}]  # exactly one booking, never re-sent
+    said = [a.payload["text"] for a in sim.of(ActionKind.SPEAK)]
+    assert said[-1].startswith("Sorry, I can't book a c") and "no tool for that" in said[-1] and "Nothing was changed" in said[-1]
+    assert slots(sim) == {"flight_id": "6E-2020", "passengers": 2} and goals(sim) == ["book_flight"]
+    assert not [p for _, p in sim.kernel.state.items("pending") if not p.resolved]  # no question attached to the booking
+    assert len(sim.of(ActionKind.FINAL)) == 1  # the completed booking is not reopened or re-announced
+    assert len(sim.calls()) == 1  # nothing else dispatched
+
+
+def test_the_live_agent_answers_an_unsupported_task_after_a_booking():
+    from frontend import server
+    from frontend.live import LiveSession
+    events: list = []
+    s = LiveSession(events.append, server.agent_cmd(), server.MANIFEST, server.PRESETS["fast"]["world"])
+    s.start()
+    try:
+        for text, pause in (("Book a flight from Bangalore to Delhi", 1.2), ("Indigo SC 2020", 1.2), ("Two people", 2.5),
+                            ("Book a cab from Bangalore Kapa", 1.5)):
+            s.inject("user.text", {"text": text})
+            s.inject("user.turn_end")
+            time.sleep(pause)
+    finally:
+        s.stop()
+        s.join(10)
+    out = [(e["msg"]["type"], e["msg"]["data"]) for e in events if e["type"] == "wire" and e["dir"] == "out" and e["msg"]]
+    assert [d["tool"] for k, d in out if k == "tool.call"] == ["book_flight"]
+    said = [d["text"] for k, d in out if k == "speech"]
+    assert said and "can't book a cab" in said[-1]
