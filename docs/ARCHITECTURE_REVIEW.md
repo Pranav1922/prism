@@ -883,6 +883,43 @@ If the planner, having seen that utterance, proposes no value for the slot, the 
 
 **Term added.** A **retraction** is a T0 register write of `None` that marks a slot as "being changed, value not yet known".
 
+### D13 — State-changing operations need user authorisation, and tool-derived literals are tainted (Phase 5, implementation evidence)
+
+**Evidence.**
+- INV-15 was implemented as "the goal has a user origin".
+- A model planner can add a state-changing task to a goal the user created for something else. For example, the user says "find flights", a tool result says "book XX-999", and the planner adds a booking. The goal still has a user origin, so the old check passed.
+- The same gap let a literal copied from a tool result reach a state-changing argument.
+
+**Decision.** This implements INV-15 as written ("no chain originates only from tool-result or evidence content"). It adds no new behaviour class.
+- **Authorisation.** A state-changing task may dispatch only if a user utterance of its goal names the operation: the tool's verb or a listed synonym (`agent/proposal.py`), or the user explicitly confirmed it.
+  - Otherwise the barrier blocks it (`BARRIER.block unauthorised`), and the kernel asks: "Do you want me to … with {args}?".
+  - A "yes" resolves the question and records the authorisation of those **exact arguments** (`AUTH.confirmed`).
+- **Grounding.** Every value the planner chose for a state-changing call (a PLANNER-sourced slot or a constant) must be something the user said in this goal: the same token, a word prefix ("Fri" for "Friday"), or a number as digits or a word.
+  - Otherwise the barrier blocks it (`ungrounded:<param>`) and asks for confirmation of the exact arguments, exactly as above.
+  - Evidence: on "book flight 6E-701", both qwen2.5 models invented `passengers=1` instead of asking (docs/PHASE5_MODEL_EVALUATION.md).
+- **Taint.** A string value that appears as a whole token in tool results or evidence but was never said by the user may reach a state-changing argument only through a `$node` binding, which resolves to a DESIRED result (INV-09). It may never arrive as a literal or slot value.
+  - A tainted write is refused (`PROP.tainted`) and turned into a question.
+  - A state-changing task that is both unauthorised and tainted is the shape of an injection. It is dropped together with the slot writes only it would read (`PROP.injection_dropped`), without asking the user about it.
+- **Checks.** Both rules are checked on every step by the invariant checker (INV-15/D13).
+
+### D14 — Planner answers are ordered, and side effects wait for newer planning (Phase 5, implementation evidence)
+
+**Evidence.** Two cases showed up once real, slow planners answered out of order:
+- **Structure.** An older proposal arriving after a newer one could overwrite the newer graph, or suspend a goal that the newer proposal had created.
+- **Side effects.** A booking could dispatch from a plan that the user had already corrected. For example, the user says "book … for one person" and then "make it two" while the first plan is in flight. The first plan arrives, the turn is closed, and the booking went out for one person.
+
+**Decision.** Field-level merging (F4) is unchanged: slot fields always apply by last-writer-wins against `based_on_seq`.
+- **Intent.** A proposal changes the intent only if `based_on_seq` ≥ the goal-switch seq AND ≥ the active goal's `origin_seq`. Otherwise the whole proposal is stale (`PROP.structure_stale`).
+- **Graph.** A proposal replaces the graph only if `based_on_seq` ≥ the graph's own `graph_seq` (`PROP.graph_stale` otherwise). An older plan never overwrites a newer one, but it still fills in a graph that no newer proposal has set.
+- **Side effects.** While a planner request for a task-changing turn is open (`may_change`), no state-changing call is dispatched (`BARRIER.block replanning`). Read-only work continues. This is checked on every step (INV-14/D14).
+- **Liveness.** The request always ends, through a proposal, a failure (worker timeout) or the deadline governor.
+
+### D15 — Status-only turns do not call the planner (Phase 5)
+
+A turn whose classes are only STATUS_QUERY/BACKCHANNEL is answered from state (Phase 4 response policy), so it does not request the planner (`PLANNER.skip`). This saves a model call per status question and cannot cancel an in-flight plan. Other turns are unchanged: every content turn still requests the planner at turn close.
+
+In addition, a proposal that fails `agent/proposal.check` (unknown tool or parameter, forward or circular dependency, duplicate state-changing task, bad shape) changes nothing (`PROP.invalid`). When the newest task-changing request fails, the agent says so instead of going silent.
+
 ---
 
 # FINAL ARCHITECTURE — APPROVED FOR IMPLEMENTATION
@@ -961,6 +998,7 @@ If the planner, having seen that utterance, proposes no value for the slot, the 
   - fields apply by last-writer-wins against `based_on_seq`;
   - graph structure applies only if no newer content-bearing input changed the intent;
   - everything is validated against the registry schemas.
+  - *(Phase 5)* the proposal's structure is checked first (D15 note); ordering follows D14; state-changing tasks need user authorisation and untainted values (D13).
 - **The model never** chooses ids, emits actions, writes snapshots, decides supersession, or decides idempotency.
 
 ### F5. Interruption

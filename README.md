@@ -5,11 +5,18 @@
 **Phase 1 complete: deterministic runtime foundation** ([details](docs/PHASE1_IMPLEMENTATION.md)).
 **Phase 2 complete: asynchronous runtime** ([report](docs/PHASE2_RUNTIME.md)): concurrent planner and perception workers, advisory cancellation, timeouts, failure events, live and manual timers, thread-safe submission; the kernel is still the only state writer.
 **Phase 3 complete: protocol adapter + black-box evaluation baseline** ([report](docs/PHASE3_PROTOCOL_ADAPTER.md)): the local protocol **PRISM-LOCAL/0** (ours, *not* Samsung's), ingress/egress adapters, a lockstep stdio agent, a black-box harness with a mock tool world, 34 scenarios, and internal PRISM-style metrics. Baseline: 34/34 scenarios pass, mean internal score 98.6 ([report](evaluation/reports/impl_a/report.md)).
-**Phase 4 complete: fast understanding + response-relevant turn classification** ([report](docs/PHASE4_FAST_UNDERSTANDING.md)): a deterministic, bounded recogniser (`agent/understand_rules.py`) classifies every utterance (REQUEST, CORRECTION, GOAL_SWITCH, ANSWER, STATUS_QUERY, BACKCHANNEL) and extracts schema-valid slot changes from the tool manifest, with no scenario tables. Truthful status answers and acknowledgements. Internal black-box result: 47/47 scenarios pass (before: 41/47), interruption → cancel 0.00 s. Held-out corpus, first run: 97.8% classification, 4.4% unsafe (fixed; see report). Next: planner / deep reasoning ([plan](docs/PHASE2_PLAN.md)).
+**Phase 4 complete: fast understanding + response-relevant turn classification** ([report](docs/PHASE4_FAST_UNDERSTANDING.md)): a deterministic, bounded recogniser (`agent/understand_rules.py`) classifies every utterance (REQUEST, CORRECTION, GOAL_SWITCH, ANSWER, STATUS_QUERY, BACKCHANNEL) and extracts schema-valid slot changes from the tool manifest, with no scenario tables. Truthful status answers and acknowledgements. Internal black-box result: 47/47 scenarios pass (before: 41/47), interruption → cancel 0.00 s. Held-out corpus, first run: 97.8% classification, 4.4% unsafe (fixed; see report).
+
+**Phase 5 complete: real planner / deep reasoning** ([report](docs/PHASE5_PLANNER.md), [model evidence](docs/PHASE5_MODEL_EVALUATION.md)):
+- A model planner proposes goals, slot values and task graphs through grammar-constrained JSON. A validation layer (one repair) sits between it and the kernel, which stays the only authority.
+- Backends: scripted, local Ollama, OpenAI-compatible (unconfigured), and replay.
+- The kernel now also refuses a state-changing action that the user never asked for, never said the values of, or that was built from tool-result content (D13). Late planner answers merge by field and never override newer ones (D14).
+- Three local models were A/B-tested on the same 55 scenarios. qwen2.5:7b plans best (40/55 with latency factored out) but is too slow for an 8 s budget on this machine. No model caused an unsafe side effect in ≈ 570 requests.
+- Next: multimodal perception ([plan](docs/PHASE2_PLAN.md)).
 
 - **What works:** a single-writer session kernel with supersession, cancellation, result admission, the state-changing operation ledger, a full journal and byte-identical replay. It runs against a local deterministic scenario simulator with scripted tools, planner and perception.
-- **Tests:** 258 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in the simulator and the async runtime.
-- **Not yet:** real planner/ASR/vision backends, live wall-clock harness mode, Docker. The official Samsung wire protocol is unavailable; only `agent/adapter/` will change when it arrives.
+- **Tests:** 323 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in the simulator and the async runtime.
+- **Not yet:** ASR/vision backends, a planner fast enough for CPU-only hosts, live wall-clock harness mode, Docker. The official Samsung wire protocol is unavailable; only `agent/adapter/` will change when it arrives.
 
 ```sh
 uv venv --python 3.12 .venv && uv pip install -e ".[dev]"
@@ -18,6 +25,8 @@ python -m agent.scenario B       # timeline: correction mid-search, stale result
 python -m evaluation.run all --agent impl_a   # black-box evaluation (INTERNAL PRISM-style metrics)
 python -m tests.understanding_corpus        # fast-understanding corpus (internal measurement)
 python -m scripts.bench_understanding       # recogniser latency
+python -m agent.adapter.stdio --planner ollama:qwen2.5:7b   # live model planner (needs `ollama serve`)
+python -m scripts.ab_planners --backends scripted,ollama:qwen2.5:3b   # A/B planner backends (INTERNAL)
 ```
 
 ## Architecture
