@@ -22,6 +22,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from agent.lexicon import flight_ids, people_count
 from agent.model import Event, Kind
 from agent.proposal import check
 from agent.registry import Registry
@@ -107,6 +108,8 @@ def extract(text: str, schema: dict) -> dict[str, Any]:
     """Values for the parameters of one tool schema that the text states. Only schema-valid values."""
     props = schema.get("properties", {})
     words = _words(text)
+    fids = flight_ids(words)
+    in_fid = {i for _, idx in fids for i in idx}
     out: dict[str, Any] = {}
     places: dict[str, str] = {}
     # "from X", "to X"; and "X to Y" without "from"
@@ -134,13 +137,12 @@ def extract(text: str, schema: dict) -> dict[str, Any]:
             if role in places:
                 out[name] = places[role]
         elif kind == "integer":
-            n = _count(words)
-            if n is not None and n >= spec.get("minimum", 0):
-                out[name] = n
+            count = people_count(words, exclude=in_fid)  # a flight number's digits are never a head count
+            if count is not None and count[0] >= spec.get("minimum", 0):
+                out[name] = count[0]
         elif kind == "string" and "id" in name.lower():
-            fid = re.search(r"\b([0-9A-Z]{2}-\d{3,4})\b", text)
-            if fid:
-                out[name] = fid.group(1)
+            if fids:
+                out[name] = fids[0][0]
         elif kind == "string":  # a free-text place: "weather in Pune", "for Mumbai"
             where = re.search(r"\b(?:in|at|for)\s+([A-Z][A-Za-z]+(?:\s[A-Z][A-Za-z]+)?)", text)
             if where and where.group(1).lower() not in WEEKDAYS:
@@ -162,6 +164,45 @@ def _count(words: list[str]) -> int | None:
     return None
 
 
+def _ask(slot: str, view: dict) -> str:
+    """How to ask for one missing value, from its schema (so the user knows what a usable answer looks like)."""
+    spec: dict = {}
+    for t in view.get("tools") or []:
+        spec = t.get("parameters", {}).get("properties", {}).get(slot) or spec
+    if re.search(r"flight.*(id|no|num)|^flight$", slot):
+        return "which flight (airline and number, for example \u201cIndiGo 6E 431\u201d)"
+    if spec.get("type") == "integer":
+        return f"how many {slot.replace('_', ' ')}"
+    if set(spec.get("enum") or []) & set(WEEKDAYS.values()):
+        return "which day"
+    return f"which {slot.replace('_', ' ')}"
+
+
+def question(missing: list[str], view: dict, proposal: dict, heard_nothing: bool) -> str:
+    """The clarification text. Honest about what was captured and what is still missing, and never the same words
+    twice in a row: a second miss says so and offers typing instead."""
+    parts = [_ask(m, view) for m in missing]
+    need = " and ".join(parts)
+    slots = view.get("slots") or {}
+    got = {**{k: slots[k]["value"] for k in view.get("turn_attributed") or [] if k in slots and slots[k].get("value") is not None},
+           **{k: v for k, v in proposal.get("slot_writes", {}).items() if v is not None}}
+    heard = str(view.get("turn_text", ""))[:60]
+    previous = [p["text"] for p in view.get("pending") or [] if p.get("asked") and p.get("kind") == "planner_clarify"]
+    if heard_nothing and previous and previous[-1].startswith("Sorry, I didn't catch"):  # alternate: never the same twice
+        example = " for example \u201c6E 431, 2 passengers\u201d" if any(re.search(r"flight.*(id|no|num)", m) for m in missing) else ""
+        return f"I still need to know {need}. You can also type it below,{example}." if example \
+            else f"I still need to know {need}. You can also type it below."
+    if heard_nothing:
+        short = " or ".join("the flight" if re.search(r"flight.*(id|no|num)|^flight$", m)
+                            else f"the number of {m.replace('_', ' ')}" if _ask(m, view).startswith("how many")
+                            else f"the {m.replace('_', ' ')}" for m in missing)
+        return f"Sorry, I didn't catch {short} in \u201c{heard}\u201d. Could you tell me {need}?"
+    if got:
+        done = ", ".join(f"{k.replace('_', ' ')} {v}" for k, v in got.items())
+        return f"Got it: {done}. Now, {need}?"
+    return f"Please tell me {need}."
+
+
 @dataclass
 class RulePlanner:
     latency: float = 0.25
@@ -179,6 +220,13 @@ class RulePlanner:
         if any(t.get("effect") == "state_changing" for t in wanted):  # "book flight X" is not also a flight search
             acts = [t for t in wanted if t.get("effect") == "state_changing"]
             wanted = acts + [t for t in wanted if t not in acts and not (_content(t) & set().union(*map(_content, acts)))]
+        # While we are waiting on an answer, a reply belongs to the current task: it switches only on an explicit
+        # switch ("never mind ...") or when it names another task AND gives values for it ("search flights to Goa").
+        answering = goal is not None and "GOAL_SWITCH" not in (view.get("turn_classes") or []) and any(
+            p.get("asked") and p.get("kind") == "planner_clarify" for p in view.get("pending") or [])
+        if answering and goal is not None:
+            wanted = [t for t in wanted if any(n["tool"] == t["name"] for n in goal.get("graph", []))
+                      or extract(text, t["parameters"])]
         writes: dict[str, Any] = {}
         graph: list[dict] = []
         if not wanted:  # no tool named: a continuation/correction of the current task
@@ -192,6 +240,10 @@ class RulePlanner:
                     params.update(extract(text, t["parameters"]))
             writes = {k: v for k, v in params.items() if slots.get(k) != v}
             if not params:
+                asked = [p for p in view.get("pending") or [] if p.get("asked") and p.get("kind") == "planner_clarify"]
+                if asked or view.get("turn_attributed"):  # an answer to our question that gave us nothing usable
+                    retry: dict[str, Any] = {"intent": goal["intent"], "new_goal": False, "slot_writes": {}}
+                    return self._finish(retry, view, tool, heard_nothing=True)
                 return None, "nothing in the request maps to the current task"
             # values equal to the current ones are already applied (the fast path wrote them): a no-op, not a failure
             proposal: dict[str, Any] = {"intent": goal["intent"], "new_goal": False, "slot_writes": writes}
@@ -235,7 +287,7 @@ class RulePlanner:
                 return node, {param: {"$node": node["node_id"], "path": [key, pos, id_field]}}
         return None
 
-    def _finish(self, proposal: dict, view: dict, tool: dict | None) -> tuple[dict | None, str]:
+    def _finish(self, proposal: dict, view: dict, tool: dict | None, heard_nothing: bool = False) -> tuple[dict | None, str]:
         known = {n: s.get("value") for n, s in (view.get("slots") or {}).items() if s.get("value") is not None}
         have = {**known, **{k: v for k, v in proposal.get("slot_writes", {}).items() if v is not None}}
         nodes = proposal.get("graph") or (view.get("goal") or {}).get("graph", [])
@@ -248,8 +300,7 @@ class RulePlanner:
                 if isinstance(b, dict) and "$slot" in b and b["$slot"] not in have and b["$slot"] not in missing:
                     missing.append(b["$slot"])
         if missing and not awaiting:
-            proposal["clarify"] = {"text": "What " + " and ".join(m.replace("_", " ") for m in missing) + " should I use?",
-                                   "slots": missing}
+            proposal["clarify"] = {"text": question(missing, view, proposal, heard_nothing), "slots": missing}
         errors = check(proposal, Registry.from_manifest(view.get("tools") or []))
         return (None, "; ".join(errors)) if errors else (proposal, "ok")
 

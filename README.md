@@ -19,7 +19,7 @@ uv venv --python 3.12 .venv && uv pip install -e ".[dev]"   # setup (Python 3.10
 ./scripts/build_asr.sh                                      # macOS: on-device speech recognition helper
 .venv/bin/python -m frontend.server --open                  # the live console: http://127.0.0.1:8765
 .venv/bin/python demo/run_demo.py                           # the two demos in the terminal (add --speak to hear them)
-.venv/bin/python -m pytest                                  # 373 tests
+.venv/bin/python -m pytest                                  # 396 tests
 .venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 57 scenarios
 docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + evaluation on Linux
 ```
@@ -45,7 +45,7 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
   - no false completion.
 
   Each is checked on every kernel step by the invariant checker (INV-01…23 plus decisions D13/D14).
-- **Tests:** 373 pass on Python 3.10 and 3.12; ruff and mypy clean.
+- **Tests:** 396 pass on Python 3.10 and 3.12; ruff and mypy clean.
 
 ### Build history
 

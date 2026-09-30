@@ -147,7 +147,8 @@ def capabilities() -> dict:
     from agent.reasoner.planner import model_available
     wanted = os.environ.get("PRISM_PLANNER", "")
     asr = (ROOT / ".build" / "prism_asr").is_file() and sys.platform == "darwin"
-    planner = {"mode": "deterministic", "detail": "scripted planner (fixtures keyed by utterance)"}
+    planner = {"mode": "deterministic",
+               "detail": "deterministic planner: known examples first, then rules for flight search, booking and weather (no model)"}
     if wanted and wanted != "scripted" and model_available(wanted):
         planner = {"mode": "model", "detail": f"{wanted} with per-request deterministic fallback"}
     return {

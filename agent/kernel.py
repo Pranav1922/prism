@@ -818,6 +818,12 @@ class _Step:
             self.rule("PLAN.graph", goal_id=gid, nodes=[n.node_id for n in nodes])
         clarify = self.payload.get("clarify")
         if clarify:
+            asked = set(clarify.get("slots", ()))
+            for pid, p in self.tx.items("pending"):  # the new question replaces older ones it fully covers
+                if p.goal_id == gid and p.kind == "planner_clarify" and not p.resolved and all(
+                        s in asked or ((r := self.tx.get("slots", (gid, s))) is not None and r.value is not None) for s in p.slots):
+                    self.tx.set("pending", pid, replace(p, resolved=True))
+                    self.rule("PENDING.replaced", pid=pid)
             self.ensure_pending(gid, "planner_clarify", tuple(clarify.get("slots", ())), clarify["text"], req.req_id)
 
     def injected(self, goal: Goal, node: dict, non_user: set[str], user_text: str, req_id: str) -> bool:

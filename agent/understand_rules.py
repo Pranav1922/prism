@@ -34,6 +34,7 @@ from typing import Any
 
 import jsonschema
 
+from agent.lexicon import flight_ids, people_count
 from agent.model import TurnClass
 from agent.understand import EMPTY_CONTEXT, SlotInfo, UnderstandContext, Understanding, annotated
 
@@ -242,6 +243,20 @@ class _Recogniser:
                 self.cues.append(f"ambiguous_role:{w}:{'|'.join(sorted(s.name for s in fits))}")
         return claims
 
+    def flight_numbers(self, low: list[str], used: set[int]) -> dict:
+        """Flight numbers (agent/lexicon.py) for a flight-id slot of the goal. Their tokens are consumed even when the
+        goal has no such slot, so "IndiGo SE 2020" can never become 2020 passengers."""
+        claims: dict = {}
+        found = flight_ids(low)
+        slot = next((s for s in self.slots.values() if re.search(r"flight.*(id|no|num)|^flight$", s.name)
+                     and _kind(s.schema) == "string"), None)
+        for value, idx in found:
+            used.update(idx)
+            if slot is not None and slot.name not in claims:
+                claims[slot.name] = ("ok", value, idx)
+                self.cues.append(f"flight_number:{slot.name}")
+        return claims
+
     def typed(self, toks, used, taken: set[str]) -> dict:
         claims = {}
         free = [i for i in range(len(toks)) if i not in used]
@@ -251,6 +266,9 @@ class _Recogniser:
                 if i in used:
                     continue
                 fits = [s for s in slots if s.name not in claims and self.canon(s, toks, [i])[0] == "ok"]
+                if kind == "number" and fits and not self.counted(toks, used, i, fits):
+                    self.cues.append("number_without_context")  # "2020" alone is not a head count
+                    continue
                 if len(fits) == 1:
                     claims[fits[0].name] = ("ok", self.canon(fits[0], toks, [i])[1], [i])
                     used.add(i)
@@ -258,6 +276,16 @@ class _Recogniser:
                 elif len(fits) > 1:
                     self.cues.append(f"ambiguous_value:{'|'.join(sorted(s.name for s in fits))}")
         return claims
+
+    def counted(self, toks, used, i: int, fits: list) -> bool:
+        """A bare number fills an integer slot only with context ("2 passengers", "for two", "two of us"), or when the
+        agent asked for exactly that slot and nothing else ("How many passengers?" -> "2")."""
+        low = [w for _, w in toks]
+        hit = people_count(low, exclude=used)
+        if hit is not None and hit[1] == i:
+            return True
+        asked = {s for p in self.ctx.pending if p[2] for s in p[1]}
+        return len(fits) == 1 and asked == {fits[0].name}
 
     def bare(self, toks, used, taken: set[str], extra_text: str) -> dict:
         slot_words = {w.rstrip("s") for s in self.slots for w in _name_tokens(s)}
@@ -334,7 +362,8 @@ class _Recogniser:
         if marker:
             self.cues.append(f"marker:{lead[0] if lead[0] in MARKER_WORDS else ' '.join(lead[:2])}")
         used: set[int] = set()
-        claims = {**self.named(toks, used)}
+        claims = self.flight_numbers(low, used)  # first: their digits must never be read as a count
+        claims.update({k: v for k, v in self.named(toks, used).items() if k not in claims})
         claims.update({k: v for k, v in self.role(toks, used).items() if k not in claims})
         claims.update({k: v for k, v in self.typed(toks, used, set(claims)).items() if k not in claims})
         if marker and not claims:  # bare values are only a fallback for an otherwise empty correction
