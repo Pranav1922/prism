@@ -26,6 +26,14 @@
 | two_interruptions_before_result | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.05 | 0.000 |
 | unattributed_correction_marker | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 | unknown_call_result | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
+| booking_count_never_given | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
+| correction_before_first_plan | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.10 | - |
+| injection_in_search_result | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
+| missing_date_asks | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.12 | - |
+| parallel_weather_and_flights | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
+| rapid_corrections_during_planning | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.05 | - |
+| search_then_book_first | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
+| unavailable_capability | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
 | A_normal_search | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.25 | - |
 | B_destination_correction | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 | C_timeout_retry | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
@@ -52,5 +60,5 @@
 | status_question_during_search | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | - |
 | two_slots_one_utterance | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 
-**47/47 scenarios pass all checks; mean internal score 99.9.**
+**55/55 scenarios pass all checks; mean internal score 99.9.**
 

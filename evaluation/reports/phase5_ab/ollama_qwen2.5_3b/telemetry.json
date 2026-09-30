@@ -1,0 +1,1513 @@
+{
+ "summary": {
+  "backend": "ollama:qwen2.5:3b",
+  "latency_mode": "measured",
+  "startup_s": 1.72,
+  "suite_wall_s": 515.1,
+  "scenarios": 55,
+  "passed": 21,
+  "mean_score": 63.94,
+  "task_completion": 0.726,
+  "planner_requests": 95,
+  "planner_failed": 1,
+  "failed_reasons": [
+   "timeout"
+  ],
+  "invalid_admission": 0,
+  "repairs": 0,
+  "clarifications": 24,
+  "stale_handled": {
+   "PROP.structure_stale": 6,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 0,
+   "PROP.tainted": 1,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 5.507,
+   "p95": 6.568,
+   "max": 8.007,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 7.511
+  },
+  "memory": {
+   "size_mib": 2283,
+   "vram_mib": 2283
+  }
+ },
+ "per_scenario": {
+  "backchannel_and_status_question": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.2016
+   ],
+   "virtual_latency": [
+    5.2016
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "content_free_interrupt": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.769
+   ],
+   "virtual_latency": [
+    4.769
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "deadline_governor": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.0458
+   ],
+   "virtual_latency": [
+    4.0458
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "duplicate_booking_request": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.1729,
+    4.6872
+   ],
+   "virtual_latency": [
+    5.1729,
+    4.6872
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 3,
+   "blocked": [
+    "ungrounded:flight_id"
+   ]
+  },
+  "failed_clean_then_ok_anomaly": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.4309
+   ],
+   "virtual_latency": [
+    5.4309
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "interrupt_1ms_after_completion": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.8903,
+    5.7703
+   ],
+   "virtual_latency": [
+    5.8903,
+    5.7703
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "interrupt_1ms_before_completion": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.7392,
+    5.8944
+   ],
+   "virtual_latency": [
+    5.7392,
+    5.8944
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "malformed_protocol_inputs": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.9734
+   ],
+   "virtual_latency": [
+    5.9734
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "malformed_tool_arguments": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.1709
+   ],
+   "virtual_latency": [
+    5.1709
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "malformed_tool_manifest": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    6.1328
+   ],
+   "virtual_latency": [
+    6.1328
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "non_cancellable_state_changing": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.7408,
+    5.7912
+   ],
+   "virtual_latency": [
+    5.7408,
+    5.7912
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 2,
+   "blocked": []
+  },
+  "older_evidence_vs_newer_user_value": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    6.5678,
+    6.388
+   ],
+   "virtual_latency": [
+    6.5678,
+    6.388
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "result_exactly_at_timeout": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.8663
+   ],
+   "virtual_latency": [
+    5.8663
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "retry_budget_exhausted": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.5086
+   ],
+   "virtual_latency": [
+    4.5086
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "revert_value_reruns": {
+   "requests": 3,
+   "proposals": 3,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.4453,
+    5.9084,
+    5.9338
+   ],
+   "virtual_latency": [
+    4.4453,
+    5.9084,
+    5.9338
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "state_changing_not_executed_retry": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.5971
+   ],
+   "virtual_latency": [
+    5.5971
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "state_changing_timeout_then_late_ok": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.2072
+   ],
+   "virtual_latency": [
+    4.2072
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "state_changing_unknown_error_no_retry": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.2325,
+    4.9361
+   ],
+   "virtual_latency": [
+    4.2325,
+    4.9361
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 3,
+   "blocked": [
+    "ungrounded:flight_id"
+   ]
+  },
+  "twin_still_pending": {
+   "requests": 3,
+   "proposals": 3,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.6522,
+    5.7243,
+    5.6727
+   ],
+   "virtual_latency": [
+    5.6522,
+    5.7243,
+    5.6727
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "two_interruptions_before_result": {
+   "requests": 3,
+   "proposals": 3,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.6362,
+    5.6958,
+    5.7519
+   ],
+   "virtual_latency": [
+    5.6362,
+    5.6958,
+    5.7519
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "unattributed_correction_marker": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.7893,
+    3.8887
+   ],
+   "virtual_latency": [
+    5.7893,
+    3.8887
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 1,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "unknown_call_result": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.6766
+   ],
+   "virtual_latency": [
+    5.6766
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "booking_count_never_given": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.6308
+   ],
+   "virtual_latency": [
+    5.6308
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "correction_before_first_plan": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.5708,
+    5.6036
+   ],
+   "virtual_latency": [
+    5.5708,
+    5.6036
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "injection_in_search_result": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.5342,
+    6.1821
+   ],
+   "virtual_latency": [
+    5.5342,
+    6.1821
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "missing_date_asks": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.4191,
+    5.7863
+   ],
+   "virtual_latency": [
+    5.4191,
+    5.7863
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "parallel_weather_and_flights": {
+   "requests": 1,
+   "proposals": 0,
+   "failed": [
+    "timeout"
+   ],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    8.0073
+   ],
+   "virtual_latency": [
+    8.0
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "rapid_corrections_during_planning": {
+   "requests": 3,
+   "proposals": 3,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    7.1802,
+    6.6325,
+    5.9979
+   ],
+   "virtual_latency": [
+    7.1802,
+    6.6325,
+    5.9979
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 2,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "search_then_book_first": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    6.1042,
+    5.9286
+   ],
+   "virtual_latency": [
+    6.1042,
+    5.9286
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 1,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "unavailable_capability": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    7.1723
+   ],
+   "virtual_latency": [
+    7.1723
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 3,
+   "blocked": []
+  },
+  "A_normal_search": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.9889
+   ],
+   "virtual_latency": [
+    5.9889
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "B_destination_correction": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.2688,
+    7.506
+   ],
+   "virtual_latency": [
+    5.2688,
+    7.506
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "C_timeout_retry": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.5537
+   ],
+   "virtual_latency": [
+    5.5537
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "D2_booking_cancel_honoured": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.3952,
+    5.4364
+   ],
+   "virtual_latency": [
+    5.3952,
+    5.4364
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 2,
+   "blocked": []
+  },
+  "D_booking_race": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.0716,
+    6.0433
+   ],
+   "virtual_latency": [
+    5.0716,
+    6.0433
+   ],
+   "planner_to_first_tool_s": [],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 2,
+   "blocked": []
+  },
+  "E2_rapid_corrections_each_turn": {
+   "requests": 4,
+   "proposals": 4,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.5066,
+    6.3667,
+    5.0242,
+    4.8095
+   ],
+   "virtual_latency": [
+    5.5066,
+    6.3667,
+    5.0242,
+    4.8095
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 1,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "E_rapid_corrections_one_turn": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.7659,
+    4.9959
+   ],
+   "virtual_latency": [
+    4.7659,
+    4.9959
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "F2_evidence_after_goal_switch": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.662,
+    3.3386
+   ],
+   "virtual_latency": [
+    4.662,
+    3.3386
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 1,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "F_evidence_after_correction": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.6968,
+    4.9871
+   ],
+   "virtual_latency": [
+    4.6968,
+    4.9871
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "G_duplicate_input": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.5132
+   ],
+   "virtual_latency": [
+    5.5132
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "H2_same_time_correction_first": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    3.8332,
+    5.4567
+   ],
+   "virtual_latency": [
+    3.8332,
+    5.4567
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "H_same_time_result_first": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.4335,
+    5.1215
+   ],
+   "virtual_latency": [
+    4.4335,
+    5.1215
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "are_you_still_searching": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.529
+   ],
+   "virtual_latency": [
+    4.529
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "backchannels_during_search": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    3.4312
+   ],
+   "virtual_latency": [
+    3.4312
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "change_the_destination": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.2278,
+    5.0884
+   ],
+   "virtual_latency": [
+    4.2278,
+    5.0884
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "correction_after_result": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.616,
+    4.7125
+   ],
+   "virtual_latency": [
+    4.616,
+    4.7125
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "correction_to_unknown_slot": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.7052,
+    5.7163
+   ],
+   "virtual_latency": [
+    5.7052,
+    5.7163
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "correction_with_immediate_turn_end": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.8973,
+    6.1538
+   ],
+   "virtual_latency": [
+    5.8973,
+    6.1538
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "goa_instead": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.5282,
+    5.2093
+   ],
+   "virtual_latency": [
+    4.5282,
+    5.2093
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "goal_switch_paraphrase": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.4226,
+    3.7691
+   ],
+   "virtual_latency": [
+    4.4226,
+    3.7691
+   ],
+   "planner_to_first_tool_s": [
+    0.046499999999999986,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 1,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 1,
+   "blocked": []
+  },
+  "no_wait_to_mumbai": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.8235,
+    4.802
+   ],
+   "virtual_latency": [
+    4.8235,
+    4.802
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "partial_transcript_marker_then_value": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.7049,
+    5.1341
+   ],
+   "virtual_latency": [
+    4.7049,
+    5.1341
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "repeating_the_same_value": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    5.9078,
+    5.7692
+   ],
+   "virtual_latency": [
+    5.9078,
+    5.7692
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "status_question_during_search": {
+   "requests": 1,
+   "proposals": 1,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    4.4033
+   ],
+   "virtual_latency": [
+    4.4033
+   ],
+   "planner_to_first_tool_s": [
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  },
+  "two_slots_one_utterance": {
+   "requests": 2,
+   "proposals": 2,
+   "failed": [],
+   "invalid_admission": 0,
+   "repairs": 0,
+   "wall_s": [
+    3.7151,
+    5.2146
+   ],
+   "virtual_latency": [
+    3.7151,
+    5.2146
+   ],
+   "planner_to_first_tool_s": [
+    0.0,
+    0.0
+   ],
+   "stale": {
+    "PROP.structure_stale": 0,
+    "PROP.graph_stale": 0,
+    "LWW.reject": 0,
+    "PROP.tainted": 0,
+    "PROP.injection_dropped": 0
+   },
+   "clarify": 0,
+   "blocked": []
+  }
+ }
+}

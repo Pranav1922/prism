@@ -1,0 +1,280 @@
+[
+ {
+  "backend": "scripted",
+  "latency_mode": "measured",
+  "startup_s": null,
+  "suite_wall_s": 5.6,
+  "scenarios": 55,
+  "passed": 55,
+  "mean_score": 99.9,
+  "task_completion": 1.0,
+  "planner_requests": 95,
+  "planner_failed": 0,
+  "failed_reasons": [],
+  "invalid_admission": 0,
+  "repairs": 0,
+  "clarifications": 12,
+  "stale_handled": {
+   "PROP.structure_stale": 0,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 1,
+   "PROP.tainted": 0,
+   "PROP.injection_dropped": 2
+  },
+  "planner_wall_s": {
+   "p50": null,
+   "p95": null,
+   "max": null,
+   "n": 0
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 2.75
+  },
+  "memory": {}
+ },
+ {
+  "backend": "ollama:qwen2.5:3b",
+  "latency_mode": "measured",
+  "startup_s": 1.72,
+  "suite_wall_s": 515.1,
+  "scenarios": 55,
+  "passed": 21,
+  "mean_score": 63.94,
+  "task_completion": 0.726,
+  "planner_requests": 95,
+  "planner_failed": 1,
+  "failed_reasons": [
+   "timeout"
+  ],
+  "invalid_admission": 0,
+  "repairs": 0,
+  "clarifications": 24,
+  "stale_handled": {
+   "PROP.structure_stale": 6,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 0,
+   "PROP.tainted": 1,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 5.507,
+   "p95": 6.568,
+   "max": 8.007,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 7.511
+  },
+  "memory": {
+   "size_mib": 2283,
+   "vram_mib": 2283
+  }
+ },
+ {
+  "backend": "ollama:qwen2.5:7b",
+  "latency_mode": "measured",
+  "startup_s": 3.52,
+  "suite_wall_s": 725.7,
+  "scenarios": 55,
+  "passed": 11,
+  "mean_score": 52.73,
+  "task_completion": 0.449,
+  "planner_requests": 95,
+  "planner_failed": 53,
+  "failed_reasons": [
+   "timeout"
+  ],
+  "invalid_admission": 0,
+  "repairs": 0,
+  "clarifications": 18,
+  "stale_handled": {
+   "PROP.structure_stale": 2,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 0,
+   "PROP.tainted": 0,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 8.002,
+   "p95": 8.01,
+   "max": 8.014,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 10.044
+  },
+  "memory": {
+   "size_mib": 4749,
+   "vram_mib": 4749
+  }
+ },
+ {
+  "backend": "ollama:llama3.1:8b",
+  "latency_mode": "measured",
+  "startup_s": 4.5,
+  "suite_wall_s": 711.6,
+  "scenarios": 55,
+  "passed": 4,
+  "mean_score": 43.55,
+  "task_completion": 0.256,
+  "planner_requests": 95,
+  "planner_failed": 61,
+  "failed_reasons": [
+   "timeout"
+  ],
+  "invalid_admission": 0,
+  "repairs": 0,
+  "clarifications": 13,
+  "stale_handled": {
+   "PROP.structure_stale": 1,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 0,
+   "PROP.tainted": 0,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 8.002,
+   "p95": 8.011,
+   "max": 8.015,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 8.697
+  },
+  "memory": {
+   "size_mib": 5535,
+   "vram_mib": 5535
+  }
+ },
+ {
+  "backend": "ollama:qwen2.5:3b",
+  "latency_mode": "0.25",
+  "startup_s": 0.67,
+  "suite_wall_s": 434.7,
+  "scenarios": 55,
+  "passed": 22,
+  "mean_score": 86.44,
+  "task_completion": 0.764,
+  "planner_requests": 95,
+  "planner_failed": 0,
+  "failed_reasons": [],
+  "invalid_admission": 0,
+  "repairs": 0,
+  "clarifications": 16,
+  "stale_handled": {
+   "PROP.structure_stale": 0,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 1,
+   "PROP.tainted": 1,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 4.388,
+   "p95": 5.655,
+   "max": 6.589,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 2.75
+  },
+  "memory": {
+   "size_mib": 2283,
+   "vram_mib": 2283
+  }
+ },
+ {
+  "backend": "ollama:qwen2.5:7b",
+  "latency_mode": "0.25",
+  "startup_s": 3.48,
+  "suite_wall_s": 872.7,
+  "scenarios": 55,
+  "passed": 40,
+  "mean_score": 91.14,
+  "task_completion": 0.846,
+  "planner_requests": 95,
+  "planner_failed": 5,
+  "failed_reasons": [
+   "invalid"
+  ],
+  "invalid_admission": 0,
+  "repairs": 5,
+  "clarifications": 23,
+  "stale_handled": {
+   "PROP.structure_stale": 0,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 0,
+   "PROP.tainted": 1,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 9.427,
+   "p95": 14.265,
+   "max": 22.125,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 2.75
+  },
+  "memory": {
+   "size_mib": 4749,
+   "vram_mib": 4749
+  }
+ },
+ {
+  "backend": "ollama:llama3.1:8b",
+  "latency_mode": "0.25",
+  "startup_s": 3.57,
+  "suite_wall_s": 940.5,
+  "scenarios": 55,
+  "passed": 21,
+  "mean_score": 79.78,
+  "task_completion": 0.608,
+  "planner_requests": 95,
+  "planner_failed": 0,
+  "failed_reasons": [],
+  "invalid_admission": 0,
+  "repairs": 1,
+  "clarifications": 47,
+  "stale_handled": {
+   "PROP.structure_stale": 0,
+   "PROP.graph_stale": 0,
+   "LWW.reject": 1,
+   "PROP.tainted": 0,
+   "PROP.injection_dropped": 0
+  },
+  "planner_wall_s": {
+   "p50": 9.487,
+   "p95": 13.183,
+   "max": 22.514,
+   "n": 95
+  },
+  "planner_to_first_tool_s": {
+   "p50": 0.0
+  },
+  "end_to_end_s": {
+   "median": 2.75
+  },
+  "memory": {
+   "size_mib": 5535,
+   "vram_mib": 5535
+  }
+ }
+]
