@@ -11,3 +11,7 @@ journals/
 # PRISM source documents: page footers carry a Samsung employee watermark; keep them out of the public repo.
 fwdsamsungprismgenaihackathon3_0registrationli/
 evaluation/reports/*/traces/
+.build/
+demo/output/
+# recorded agent journals of evaluation runs ARE evidence (replay mode): keep them
+!evaluation/reports/**/journals/
