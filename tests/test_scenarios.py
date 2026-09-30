@@ -55,7 +55,8 @@ def test_c_timeout_supersedes_cancels_and_retries_in_the_same_step():
     sim = scenario_c(**CK)
     calls = sim.calls()
     assert calls["c1"].superseded_reason == "timeout" and calls["c1"].outcome is Outcome.OK  # late OK recorded
-    timeout_step = next(r for r in sim.journal.of_type("step") if any(x["rule"] == "TIMER.fire" for x in r["rules"]))
+    timeout_step = next(r for r in sim.journal.of_type("step")
+                        if any(x["rule"] == "TIMER.fire" and x["purpose"] == "tool_timeout" for x in r["rules"]))
     dispatched = [x["call_id"] for x in timeout_step["rules"] if x["rule"] == "REC.dispatch"]
     assert dispatched == ["c2"]  # D2: retry at once, superseded twin still in flight
     assert [a.payload["call_id"] for a in sim.of(ActionKind.CANCEL)] == ["c1"]

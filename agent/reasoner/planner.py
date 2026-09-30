@@ -315,6 +315,7 @@ class ReplayPlanner:
 
     journal_path: str
     records: list[dict] = field(default_factory=list)
+    strict: bool = True  # False: a recording made by an OLDER agent version (sequence numbers may differ)
 
     def __post_init__(self) -> None:
         recs = [json.loads(line) for line in Path(self.journal_path).read_text().splitlines() if line.strip()]
@@ -322,11 +323,52 @@ class ReplayPlanner:
 
     def respond(self, request: dict, now: float) -> tuple[float, Event]:
         rec = self._by_req.get(request["req_id"])
-        if rec is None or rec["view_digest"] != view_digest(request["view"]):
+        if rec is None or (self.strict and rec["view_digest"] != view_digest(request["view"])):
             raise PlannerError(f"replay diverged at {request['req_id']}")
         self.records.append({**rec, "replayed": True})
         delay = rec["virtual_latency"]
-        return now + delay, Event(Kind(rec["kind"]), now + delay, rec["payload"])
+        payload = {**rec["payload"], "req_id": request["req_id"], "based_on_seq": request["based_on_seq"]}
+        return now + delay, Event(Kind(rec["kind"]), now + delay, payload)  # identity is re-attached, never replayed
 
     def describe(self) -> dict:
-        return {"backend": "replay", "journal": Path(self.journal_path).name}
+        return {"backend": "replay", "journal": Path(self.journal_path).name, "strict": self.strict}
+
+
+@dataclass
+class FallbackPlanner:
+    """Deployment policy: PRIMARY (a model) when it answers; the deterministic SAFE FALLBACK when the primary fails or
+    times out and the fallback has a plan for the turn. The kernel's admission rules apply to both unchanged."""
+
+    primary: Any
+    fallback: Any
+    records: list[dict] = field(default_factory=list)
+
+    def respond(self, request: dict, now: float) -> tuple[float, Event]:
+        t, event = self.primary.respond(request, now)
+        rec = dict(self.primary.records[-1]) if getattr(self.primary, "records", None) else {}
+        if event.kind is Kind.PROPOSAL_FAILED:
+            _, alt = self.fallback.respond(request, now)
+            if alt.kind is Kind.PROPOSAL:
+                rec["fallback"] = f"primary {event.payload.get('reason')}; used fallback"
+                event = Event(Kind.PROPOSAL, t, alt.payload)
+        self.records.append(rec)
+        return t, event
+
+    def describe(self) -> dict:
+        return {"policy": "primary+fallback", "primary": self.primary.describe(), "fallback": "scripted"}
+
+
+def model_available(spec: str, timeout_s: float = 2.0) -> bool:
+    """Is the configured model backend reachable and the model present? (Ollama: /api/tags; remote: configured.)"""
+    kind, _, model = spec.partition(":")
+    if kind == "openai":
+        import os
+        return bool(os.environ.get("PRISM_OPENAI_API_KEY") and os.environ.get("PRISM_OPENAI_BASE_URL"))
+    if kind != "ollama":
+        return False
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=timeout_s) as resp:  # noqa: S310 (local)
+            return any(m.get("name") == model for m in json.loads(resp.read()).get("models", []))
+    except (OSError, ValueError):
+        return False

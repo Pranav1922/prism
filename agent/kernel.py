@@ -17,9 +17,11 @@ from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from typing import Any
 
+from agent import speech
 from agent.model import (
     KNOWN_OUTCOMES,
     OUTCOME_MOVES,
+    SPEECH_KINDS,
     Action,
     ActionKind,
     Call,
@@ -62,6 +64,7 @@ class Config:
     ro_max_attempts: int = 3  # read-only: at most 2 retries
     sm_max_same_args: int = 2  # state-changing: one retry with identical arguments
     evidence_theta: float = 0.8
+    ack_s: float = 0.6  # silence after a turn before "Got it, working that out." while the plan is still being made
 
 
 def _meta_defaults() -> dict:
@@ -71,6 +74,9 @@ def _meta_defaults() -> dict:
         "n_req": 0, "n_percept": 0, "deadline_passed": False, "session_ended": False,
         "switch_pending": None,  # D11: goal whose work is withheld until the planner answers a goal switch
         "utterances": (),  # ((based_seq, text), ...) of recent closed content turns: fast-understanding context
+        "last_speech_seq": 0,  # step of the last speech act (the ack timer stays silent if anything was said)
+        "asr_pending": (),  # D16: perception req ids of audio still being transcribed
+        "asr_eot": False,  # D16: the user's end of turn arrived before its transcript
         "authorised": (),  # D13: ((goal_id, canonical [tool, args]), ...) operations the user explicitly confirmed
     }
 
@@ -313,6 +319,7 @@ class _Step:
         self.closed_turn: Turn | None = None  # the user turn this step closed (drives turn-close responses)
         self.failure_note = False  # the newest planner request failed: say so instead of going silent
         self.reply_text: str | None = None  # a planner question with no goal to attach it to
+        self.progress_ack = False  # the ack timer found the user waiting in silence on a slow plan
 
     # ------------------------------------------------------------ small helpers
 
@@ -331,6 +338,8 @@ class _Step:
         return n
 
     def emit(self, kind: ActionKind, rule: str, payload: dict) -> None:
+        if kind in SPEECH_KINDS:
+            self.set_meta("last_speech_seq", self.seq)
         self._actions.append((kind, rule, payload))
 
     def arm(self, timer_id: str, purpose: str, due_t: float, ref: str | None = None) -> None:
@@ -494,6 +503,7 @@ class _Step:
         self.tx.set("reqs", rid, Request(rid, "understand", based, based if based > 0 else None, True, may_change))
         self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": "understand",
                              "view": self.planner_view(turn)})
+        self.arm("ack", "ack_delay", self.now + self.cfg.ack_s, str(self.seq))
         self.rule("PLANNER.request", req_id=rid, based_on_seq=based)
 
     def planner_view(self, turn: Turn) -> dict:
@@ -622,8 +632,17 @@ class _Step:
         self.rule("T0.classify", cls=u.cls.value, cues=list(u.cues), attributed=list(u.attributed),
                   writes=sorted(u.writes))
         self.arm("eot", "eot_silence", self.now + self.cfg.silence_s)
+        if self.payload.get("source") == "asr":
+            self.set_meta("asr_pending", self.meta("asr_pending")[1:])
+            if self.meta("asr_eot") and not self.meta("asr_pending"):  # D16: the turn already ended
+                self.set_meta("asr_eot", False)
+                self.close_turn(inferred=False)
 
     def on_end_of_turn(self) -> None:
+        if not self.turn_open() and self.meta("asr_pending"):
+            self.set_meta("asr_eot", True)  # D16: close when the transcript arrives
+            self.rule("TURN.await_transcript")
+            return
         self.close_turn(inferred=False)
 
     def on_interrupt(self) -> None:
@@ -659,6 +678,10 @@ class _Step:
                                         f"I can't confirm whether {call.tool} went through yet.", call.call_id)
         elif timer.purpose == "deadline":
             self.deadline()
+        elif timer.purpose == "ack_delay":
+            waiting = any(r.open and r.may_change for _, r in self.tx.items("reqs"))
+            if waiting and not self.turn_open() and self.meta("last_speech_seq") < int(timer.ref or 0):
+                self.progress_ack = True
 
     def deadline(self) -> None:
         self.set_meta("deadline_passed", True)
@@ -675,7 +698,7 @@ class _Step:
         goal = active_goal(self.tx)
         done, grounded, ops = self.satisfied(goal)
         self.emit(ActionKind.FINAL, "DEADLINE.final", {
-            "text": "Here is where things stand." if not done else f"Done: {goal.intent}.",  # type: ignore[union-attr]
+            "text": "Here is where things stand." if not done else self.done_text(grounded, ops),
             "act": "answer" if done else "narration", "grounded_on": grounded, "ops": ops,
             "ledger_calls": self.ledger_calls(ops),
             "snapshot": snapshot(goal, dict(self.tx.items("slots")))})
@@ -742,6 +765,8 @@ class _Step:
             for fid, frame in self.tx.items("frames"):
                 if frame.goal_id is None:
                     self.tx.set("frames", fid, replace(frame, goal_id=gid))
+                    if frame.claims:  # evidence that arrived before its goal existed applies now
+                        self.apply_evidence(gid, frame.claims, frame.seq)
         if goal is None:
             self.rule("PROP.no_goal", req_id=req.req_id)
             clarify = self.payload.get("clarify")
@@ -884,11 +909,18 @@ class _Step:
             self.effects.append({"effect": "perceive", "req_id": req_id, "kind": "vision",
                                  "source_eid": self.ev.eid, "ref": self.payload.get("ref"), "hints": hints})
         else:
+            self.set_meta("asr_pending", (*self.meta("asr_pending"), req_id))
             self.effects.append({"effect": "perceive", "req_id": req_id, "kind": "asr",
                                  "source_eid": self.ev.eid, "ref": self.payload.get("ref")})
 
     def on_perception_failed(self) -> None:
         self.rule("PERCEPTION.failed", req_id=self.payload.get("req_id"))
+        pending = tuple(r for r in self.meta("asr_pending") if r != self.payload.get("req_id"))
+        if pending != self.meta("asr_pending"):
+            self.set_meta("asr_pending", pending)
+            if not pending and self.meta("asr_eot"):
+                self.set_meta("asr_eot", False)
+                self.failure_note = True  # nothing was understood: say so
 
     def on_evidence(self) -> None:
         fid = self.payload.get("frame_eid")
@@ -906,6 +938,9 @@ class _Step:
         if goal is None or goal.status is not GoalStatus.ACTIVE:
             self.rule("EV.not_active", frame_eid=fid, goal_id=gid)  # kept, not applied (§8.5)
             return
+        self.apply_evidence(gid, claims, frame.seq)
+
+    def apply_evidence(self, gid: str, claims: tuple, frame_seq: int) -> None:
         for key, value, conf in claims:
             reg = self.tx.get("slots", (gid, key))
             if reg is not None and reg.source != "EVIDENCE" and reg.value != value:
@@ -913,7 +948,7 @@ class _Step:
                                     f"The image shows {value} but you said {reg.value}. Which one is right?", key)
                 self.rule("EV.conflict", slot=key, evidence=value, current=reg.value)
                 continue
-            self.write_register(gid, key, value, frame.seq, "EVIDENCE", conf >= self.cfg.evidence_theta)
+            self.write_register(gid, key, value, frame_seq, "EVIDENCE", conf >= self.cfg.evidence_theta)
 
     # ------------------------------------------------------------ reconciliation (every step)
 
@@ -1047,6 +1082,12 @@ class _Step:
                         grounded.append(done.call_id)
         return complete, grounded, ops
 
+    def done_text(self, grounded: list[str], ops: list[list]) -> str:
+        """Completion wording from the admitted results the FINAL is grounded on (and committed operations) only."""
+        calls = [self.tx.get("calls", cid) for cid in grounded]
+        results = [(c.tool, json.loads(c.result_json)) for c in calls if c is not None and c.result_json]
+        return speech.done(results, [op[1] for op in ops])
+
     def ledger_calls(self, ops: list[list]) -> list[str]:
         """D6: the committed attempts behind COMMITTED operations, for truthful external reporting only.
         They are never bindings or grounding (INV-09 still reads `grounded_on`, which holds DESIRED calls only)."""
@@ -1085,8 +1126,8 @@ class _Step:
                 self.emit(ActionKind.CLARIFY, "PENDING.ask", {"text": p.text, "slots": list(p.slots), "reason": p.kind})
         spoke = False
         if self.dispatched:  # progressive wording only: dispatch is never a completion claim
-            what = "; ".join(f"{c.tool} {c.args_json}" for c in self.dispatched)
-            self.emit(ActionKind.SPEAK, "SPEECH.ack", {"text": f"Working on it: {what}", "act": "ack", "grounded_on": []})
+            text = speech.working_on([(c.tool, json.loads(c.args_json)) for c in self.dispatched])
+            self.emit(ActionKind.SPEAK, "SPEECH.ack", {"text": text, "act": "ack", "grounded_on": []})
             spoke = True
         turn = self.closed_turn
         if turn is not None and not spoke:  # a closed user turn gets a grounded response, never a filler
@@ -1098,9 +1139,11 @@ class _Step:
                 self.emit(ActionKind.SPEAK, "SPEECH.switch",
                           {"text": f"Okay, leaving {goal.intent} for now.", "act": "ack", "grounded_on": []})
             elif TurnClass.CORRECTION.value in classes and turn.t0_writes:
-                names = ", ".join(sorted({n for _, n, _ in turn.t0_writes}))
-                self.emit(ActionKind.SPEAK, "SPEECH.correction",
-                          {"text": f"Okay, updating the {names}.", "act": "ack", "grounded_on": []})
+                self.emit(ActionKind.SPEAK, "SPEECH.correction", {
+                    "text": speech.correction(sorted({n for _, n, _ in turn.t0_writes})), "act": "ack", "grounded_on": []})
+
+        if self.progress_ack and not spoke:  # request accepted, plan still being made: say so once, then wait
+            self.emit(ActionKind.SPEAK, "SPEECH.accepted", {"text": speech.accepted(), "act": "ack", "grounded_on": []})
         if self.reply_text and not spoke and not self.turn_open():
             self.emit(ActionKind.SPEAK, "SPEECH.planner_reply", {"text": self.reply_text, "act": "narration",
                                                                  "grounded_on": []})
@@ -1115,7 +1158,7 @@ class _Step:
         if done and goal.final_keys != keys:
             self.tx.set("goals", goal.goal_id, replace(self.tx.get("goals", goal.goal_id), final_keys=keys))
             self.emit(ActionKind.FINAL, "FINAL.complete", {
-                "text": f"Done: {goal.intent}.", "act": "answer", "grounded_on": grounded, "ops": ops,
+                "text": self.done_text(grounded, ops), "act": "answer", "grounded_on": grounded, "ops": ops,
                 "ledger_calls": self.ledger_calls(ops),
                 "snapshot": snapshot(goal, dict(self.tx.items("slots")))})
 

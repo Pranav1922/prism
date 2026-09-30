@@ -1,0 +1,76 @@
+{
+ "id": "demo_ticket_image",
+ "description": "DEMO 2 (real audio + real image). The user asks by voice for flights 'on the date on this ticket' and shows a boarding pass. OCR reads SATURDAY; that evidence fills the date of the current goal, the search runs for Saturday, and the answer is grounded on it. The planner never invents the date.",
+ "tags": [
+  "demo",
+  "audio",
+  "multimodal",
+  "evidence"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 1.5,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.audio",
+   "data": {
+    "ref": "demo/media/ticket_request.aiff",
+    "duration_s": 3.4
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.2,
+   "type": "user.frame",
+   "data": {
+    "ref": "demo/media/ticket.png"
+   },
+   "id": "photo"
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  }
+ ],
+ "horizon": 20,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "date": "Sat",
+     "destination": "DEL",
+     "origin": "BLR"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "date": "Sat",
+     "destination": "DEL"
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "answer_turns": [
+   "ask_end"
+  ]
+ }
+}

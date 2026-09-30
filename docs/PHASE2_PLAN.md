@@ -326,4 +326,4 @@ A phase is complete only when:
 | 8 + 9/5 + 10 (first version): protocol adapter, black-box harness, tool world, evaluator | **complete** (204 tests; 34/34 scenarios; benchmarked) | [`PHASE3_PROTOCOL_ADAPTER.md`](PHASE3_PROTOCOL_ADAPTER.md) |
 | 3: Fast understanding (the user's "Phase 4") | **complete** (257 tests; 47/47 scenarios; benchmarked) | [`PHASE4_FAST_UNDERSTANDING.md`](PHASE4_FAST_UNDERSTANDING.md) |
 | 4: Planner + model evaluation (the user's "Phase 5") | **complete** (323 tests; 55/55 scenarios scripted; 3 local models A/B-tested) | [`PHASE5_PLANNER.md`](PHASE5_PLANNER.md), [`PHASE5_MODEL_EVALUATION.md`](PHASE5_MODEL_EVALUATION.md) |
-| 6: Multimodal perception | next (awaiting go-ahead) | — |
+| 6 (minimum) + 7 (minimum): real ASR/OCR perception, response layer, demo, Docker ("final integration") | **complete** (329 tests; 57/57 scenarios) | [`SUBMISSION_READINESS.md`](SUBMISSION_READINESS.md) |

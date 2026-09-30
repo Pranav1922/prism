@@ -6,9 +6,14 @@ a request dict goes in, an Event comes back after a scripted latency. They are N
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from agent.model import Event, Kind
+
+
+def _norm(text: str) -> str:
+    return " ".join(re.sub(r"[^\w\s-]", " ", text.lower()).split())
 
 
 @dataclass
@@ -20,7 +25,10 @@ class ScriptedPlanner:
 
     def respond(self, request: dict, now: float) -> tuple[float, Event]:
         base = {"req_id": request["req_id"], "based_on_seq": request["based_on_seq"]}
-        proposal = self.script.get(request["view"]["turn_text"])
+        text = request["view"]["turn_text"]
+        proposal = self.script.get(text)
+        if proposal is None:  # a transcript differs from the typed key in case / punctuation only
+            proposal = {_norm(k): v for k, v in self.script.items()}.get(_norm(text))
         if proposal is None:
             return now + self.latency, Event(Kind.PROPOSAL_FAILED, now + self.latency, {**base, "reason": "no_script"})
         return now + self.latency, Event(Kind.PROPOSAL, now + self.latency, {**base, **proposal})

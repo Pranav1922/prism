@@ -1,32 +1,70 @@
 # Interruptible Real-Time Agent: Samsung PRISM GenAI Hackathon 2026-27, Theme 05
 
-## Current implementation status
+## What this is
 
-**Phase 1 complete: deterministic runtime foundation** ([details](docs/PHASE1_IMPLEMENTATION.md)).
-**Phase 2 complete: asynchronous runtime** ([report](docs/PHASE2_RUNTIME.md)): concurrent planner and perception workers, advisory cancellation, timeouts, failure events, live and manual timers, thread-safe submission; the kernel is still the only state writer.
-**Phase 3 complete: protocol adapter + black-box evaluation baseline** ([report](docs/PHASE3_PROTOCOL_ADAPTER.md)): the local protocol **PRISM-LOCAL/0** (ours, *not* Samsung's), ingress/egress adapters, a lockstep stdio agent, a black-box harness with a mock tool world, 34 scenarios, and internal PRISM-style metrics. Baseline: 34/34 scenarios pass, mean internal score 98.6 ([report](evaluation/reports/impl_a/report.md)).
-**Phase 4 complete: fast understanding + response-relevant turn classification** ([report](docs/PHASE4_FAST_UNDERSTANDING.md)): a deterministic, bounded recogniser (`agent/understand_rules.py`) classifies every utterance (REQUEST, CORRECTION, GOAL_SWITCH, ANSWER, STATUS_QUERY, BACKCHANNEL) and extracts schema-valid slot changes from the tool manifest, with no scenario tables. Truthful status answers and acknowledgements. Internal black-box result: 47/47 scenarios pass (before: 41/47), interruption → cancel 0.00 s. Held-out corpus, first run: 97.8% classification, 4.4% unsafe (fixed; see report).
+A working prototype of an **interruptible, real-time, multimodal agent**. You can change what you asked for while the agent is still working. It then:
+- cancels the superseded work immediately;
+- ignores results that arrive late;
+- never duplicates a side effect;
+- never claims something is done without a result to show for it.
 
-**Phase 5 complete: real planner / deep reasoning** ([report](docs/PHASE5_PLANNER.md), [model evidence](docs/PHASE5_MODEL_EVALUATION.md)):
-- A model planner proposes goals, slot values and task graphs through grammar-constrained JSON. A validation layer (one repair) sits between it and the kernel, which stays the only authority.
-- Backends: scripted, local Ollama, OpenAI-compatible (unconfigured), and replay.
-- The kernel now also refuses a state-changing action that the user never asked for, never said the values of, or that was built from tool-result content (D13). Late planner answers merge by field and never override newer ones (D14).
-- Three local models were A/B-tested on the same 55 scenarios. qwen2.5:7b plans best (40/55 with latency factored out) but is too slow for an 8 s budget on this machine. No model caused an unsafe side effect in ≈ 570 requests.
-- Next: multimodal perception ([plan](docs/PHASE2_PLAN.md)).
+It takes spoken requests (real on-device speech recognition) and images (real OCR). It plans through a validated planner port: a model when one is configured and reachable, otherwise a deterministic fallback. It is evaluated black-box with our own harness and **INTERNAL PRISM-style metrics**.
 
-- **What works:** a single-writer session kernel with supersession, cancellation, result admission, the state-changing operation ledger, a full journal and byte-identical replay. It runs against a local deterministic scenario simulator with scripted tools, planner and perception.
-- **Tests:** 323 pass on Python 3.12 and 3.10, and all 23 architectural invariants are checked on every step, in the simulator and the async runtime.
-- **Not yet:** ASR/vision backends, a planner fast enough for CPU-only hosts, live wall-clock harness mode, Docker. The official Samsung wire protocol is unavailable; only `agent/adapter/` will change when it arrives.
+> Nothing here has been run on the Samsung evaluation kit, which was not available. **PRISM-LOCAL/0** is this project's own local protocol, not Samsung's; only `agent/adapter/` should change when the kit arrives.
+
+## Quick start
 
 ```sh
-uv venv --python 3.12 .venv && uv pip install -e ".[dev]"
-python -m pytest                 # full suite
-python -m agent.scenario B       # timeline: correction mid-search, stale result rejected
-python -m evaluation.run all --agent impl_a   # black-box evaluation (INTERNAL PRISM-style metrics)
-python -m tests.understanding_corpus        # fast-understanding corpus (internal measurement)
-python -m scripts.bench_understanding       # recogniser latency
-python -m agent.adapter.stdio --planner ollama:qwen2.5:7b   # live model planner (needs `ollama serve`)
+uv venv --python 3.12 .venv && uv pip install -e ".[dev]"   # setup (Python 3.10-3.12)
+./scripts/build_asr.sh                                      # macOS: on-device speech recognition helper
+.venv/bin/python demo/run_demo.py                           # the two demos (add --speak to hear them)
+.venv/bin/python -m pytest                                  # 329 tests
+.venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 57 scenarios
+docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + evaluation on Linux
+```
+
+- **Demo:** [`demo/README.md`](demo/README.md), with a reference run in [`demo/SAMPLE_OUTPUT.txt`](demo/SAMPLE_OUTPUT.txt).
+- **Submission status, requirement mapping and limitations:** [`docs/SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md).
+
+## Current status (final integration)
+
+- **Black-box evaluation (INTERNAL):** 57/57 scenarios pass, mean internal score 99.8 ([report](evaluation/reports/final/report.md)).
+  - Suites: reference 12/12, adversarial 22/22, understanding 13/13, planner 8/8, demo 2/2.
+  - Interruption → cancel is 0.00 s (virtual; same kernel step), and 1.1 ms wall-clock while a planner call is running.
+- **Real input:**
+  - audio via Apple on-device speech recognition (macOS) → fast understanding → kernel;
+  - images via tesseract OCR → grounded evidence → the right goal.
+  - Scripted fallbacks are used elsewhere, for example in Docker.
+- **Planner policy:** `--planner auto` uses the model named by `PRISM_PLANNER` if its server is reachable, with a per-request deterministic fallback; otherwise it uses the deterministic scripted planner. Three local models were measured ([evidence](docs/PHASE5_MODEL_EVALUATION.md)): none is both reliable and fast enough on this machine, so the demo uses the deterministic planner.
+- **Safety:**
+  - no duplicate side effects;
+  - no state-changing call the user did not ask for or whose values the user never said;
+  - tool-result injection is refused;
+  - no false completion.
+
+  Each is checked on every kernel step by the invariant checker (INV-01…23 plus decisions D13/D14).
+- **Tests:** 329 pass on Python 3.10 and 3.12; ruff and mypy clean.
+
+### Build history
+
+| Phase | Report |
+|---|---|
+| Architecture (locked), hostile review, decisions D1–D16 | [`ARCHITECTURE_REVIEW.md`](docs/ARCHITECTURE_REVIEW.md) |
+| 1: Deterministic kernel, journal, replay | [`PHASE1_IMPLEMENTATION.md`](docs/PHASE1_IMPLEMENTATION.md) |
+| 2: Async runtime | [`PHASE2_RUNTIME.md`](docs/PHASE2_RUNTIME.md) |
+| 3: PRISM-LOCAL/0 adapter + black-box evaluation | [`PHASE3_PROTOCOL_ADAPTER.md`](docs/PHASE3_PROTOCOL_ADAPTER.md) |
+| 4: Fast understanding | [`PHASE4_FAST_UNDERSTANDING.md`](docs/PHASE4_FAST_UNDERSTANDING.md) |
+| 5: Planner / deep reasoning, model A/B | [`PHASE5_PLANNER.md`](docs/PHASE5_PLANNER.md), [`PHASE5_MODEL_EVALUATION.md`](docs/PHASE5_MODEL_EVALUATION.md) |
+| Final integration: audio, vision, response layer, demo, Docker | [`SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md) |
+
+### More commands
+
+```sh
+python -m agent.scenario B                         # kernel-level timeline: correction mid-search, stale result rejected
+python -m tests.understanding_corpus               # fast-understanding corpus (internal measurement)
+PRISM_PLANNER=ollama:qwen2.5:7b python demo/run_demo.py   # live local model planner (needs `ollama serve`)
 python -m scripts.ab_planners --backends scripted,ollama:qwen2.5:3b   # A/B planner backends (INTERNAL)
+python -m scripts.replay_models evaluation/reports/phase5_ab/ollama_qwen2.5_7b_lat0.25   # replay a model run, no model
 ```
 
 ## Architecture

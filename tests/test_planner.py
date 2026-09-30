@@ -301,7 +301,9 @@ def test_11_planner_timeout_leaves_the_session_usable():
     sim = run([(0.1, say(FIND)), (0.3, eot()), (12.0, say(FIND + " please")), (12.2, eot())],
               {FIND: (10.0, "fail:timeout"), FIND + " please": (0.25, FIND_PLAN)})
     assert rules(sim, "PROP.failed")[0]["reason"] == "timeout"
-    assert "couldn't work out" in texts(sim, ActionKind.SPEAK)[0] and calls(sim, "search_flights")
+    said = texts(sim, ActionKind.SPEAK)
+    assert said[0] == "Got it, working that out."  # the ack timer: the user is not left in silence for 10 s
+    assert any("couldn't work out" in t for t in said) and calls(sim, "search_flights")
 
 
 def test_12_cancelled_model_worker_never_re_enters():
@@ -488,10 +490,17 @@ def test_planner_invented_value_for_a_side_effect_is_confirmed_first():
 RECORDED = ROOT / "evaluation" / "reports" / "phase5_ab" / "ollama_qwen2.5_7b_lat0.25"
 
 
+def tool_level(result):
+    """Outcome of a run minus speech timing (the response policy changed after the recording): every tool, cancel,
+    side-effect, safety and final check, plus interruption->cancel latencies."""
+    from scripts.replay_models import tool_level as tl
+    return tl(result)
+
+
 @pytest.mark.skipif(not RECORDED.exists(), reason="no recorded model run")
 @pytest.mark.parametrize("sid", ["B_destination_correction", "search_then_book_first", "injection_in_search_result"])
 def test_recorded_real_model_runs_replay_identically(sid, tmp_path, monkeypatch):
-    """A qwen2.5:7b session recorded in LIVE mode reproduces the same black-box result in REPLAY mode, with no model."""
+    """A qwen2.5:7b session recorded in LIVE mode reproduces the same tool-level behaviour in REPLAY mode, no model."""
     import sys
 
     from evaluation import harness, metrics
@@ -499,8 +508,8 @@ def test_recorded_real_model_runs_replay_identically(sid, tmp_path, monkeypatch)
     monkeypatch.setenv("PRISM_JOURNAL_DIR", str(tmp_path))
     recorded = {r["scenario"]: r for r in json.loads((RECORDED / "results.json").read_text())["results"]}
     scenario = load(discover(sid)[0])
-    cmd = [sys.executable, "-m", "agent.adapter.stdio", "--planner", f"replay:{RECORDED / 'journals' / (sid + '.jsonl')}"]
-    assert metrics.evaluate(scenario, harness.run(scenario, cmd)) == recorded[sid]
+    cmd = [sys.executable, "-m", "agent.adapter.stdio", "--planner", f"replay-lenient:{RECORDED / 'journals' / (sid + '.jsonl')}"]
+    assert tool_level(metrics.evaluate(scenario, harness.run(scenario, cmd))) == tool_level(recorded[sid])
     header = json.loads((tmp_path / f"{sid}.jsonl").read_text().splitlines()[0])
     assert header["planner_mode"] == "replay"
 
@@ -508,3 +517,26 @@ def test_recorded_real_model_runs_replay_identically(sid, tmp_path, monkeypatch)
 def test_status_during_planning_is_truthful():
     sim = run([(0.1, say(FIND)), (0.3, eot()), (1.0, say("what's happening?")), (1.1, eot())], {FIND: (3.0, FIND_PLAN)})
     assert "I'm still working out how to do that." in texts(sim, ActionKind.SPEAK)
+
+
+def test_image_evidence_arriving_before_its_goal_exists_is_applied_when_the_goal_is_created():
+    from agent.planner import ScriptedPerception
+    ask = "find flights from Bangalore to Delhi on the date on this ticket"
+    plan = {**FIND_PLAN, "slot_writes": {"origin": "BLR", "destination": "DEL"}}  # the planner does not invent the date
+    sim = Sim(MANIFEST, {"search_flights": Behavior(0.3, data=flights)}, TimedPlanner({ask: (1.5, plan)}),
+              ScriptedPerception({"img": {"date": ["Sat", 0.95]}}, latency=0.5), kernel_factory=CheckedKernel)
+    sim.run([(0.1, say(ask)), (0.2, Event(Kind.MEDIA, 0.0, {"kind": "image", "ref": "img"}, "f1")), (0.4, eot())])
+    assert rules(sim, "EV.not_active")  # evidence (0.7) before the goal (1.9)
+    assert [json.loads(c.args_json)["date"] for c in calls(sim)] == ["Sat"] and final_slots(sim)["date"] == "Sat"
+
+
+def test_end_of_turn_before_the_transcript_closes_the_turn_when_the_transcript_arrives():
+    from agent.planner import ScriptedPerception
+    perception = ScriptedPerception(transcripts={"clip": {"text": FIND}}, latency=0.6)
+    sim = Sim(MANIFEST, {"search_flights": Behavior(2.0, data=flights)}, TimedPlanner({FIND: (0.25, FIND_PLAN)}),
+              perception, kernel_factory=CheckedKernel)
+    sim.run([(0.1, Event(Kind.MEDIA, 0.0, {"kind": "audio", "ref": "clip"}, "a1")), (0.2, eot())])
+    assert rules(sim, "TURN.await_transcript")
+    close = rules(sim, "TURN.close")[0]
+    assert close["inferred"] is False  # closed by the user's end of turn at the transcript (0.7), not the 1 s timer
+    assert calls(sim)[0].dispatched_seq and final_slots(sim)["destination"] == "DEL"

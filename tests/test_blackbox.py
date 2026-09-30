@@ -23,7 +23,7 @@ INTERNAL_WORDS = ("t0", "slot_writes", "graph", "writer_seq", "relevance", "SUPE
 
 def test_scenario_suite_is_large_enough_and_valid():
     assert len(ALL) >= 30
-    assert {p.parent.name for p in ALL} == {"reference", "adversarial", "understanding", "planner"}
+    assert {p.parent.name for p in ALL} == {"reference", "adversarial", "understanding", "planner", "demo"}
     for p in ALL:
         load(p)
 

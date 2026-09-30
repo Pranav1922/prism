@@ -544,6 +544,85 @@
         "text": "I can search and book flights and check the weather, but I can't order food.",
         "slots": []
       }
+    },
+    "Find a flight from Bangalore to Delhi on Friday.": {
+      "intent": "search_flights",
+      "slot_writes": {
+        "origin": "BLR",
+        "destination": "DEL",
+        "date": "Fri"
+      },
+      "graph": [
+        {
+          "node_id": "n1",
+          "tool": "search_flights",
+          "args": {
+            "origin": {
+              "$slot": "origin"
+            },
+            "destination": {
+              "$slot": "destination"
+            },
+            "date": {
+              "$slot": "date"
+            }
+          }
+        }
+      ]
+    },
+    "Wait, Mumbai instead.": {
+      "intent": "search_flights",
+      "slot_writes": {
+        "destination": "BOM"
+      }
+    },
+    "Find flights from Bangalore to Delhi on the date on this ticket.": {
+      "intent": "search_flights",
+      "slot_writes": {
+        "origin": "BLR",
+        "destination": "DEL"
+      },
+      "graph": [
+        {
+          "node_id": "n1",
+          "tool": "search_flights",
+          "args": {
+            "origin": {
+              "$slot": "origin"
+            },
+            "destination": {
+              "$slot": "destination"
+            },
+            "date": {
+              "$slot": "date"
+            }
+          }
+        }
+      ]
+    },
+    "Find flight flights from Bangalore to Delhi on the date on this ticket": {
+      "intent": "search_flights",
+      "slot_writes": {
+        "origin": "BLR",
+        "destination": "DEL"
+      },
+      "graph": [
+        {
+          "node_id": "n1",
+          "tool": "search_flights",
+          "args": {
+            "origin": {
+              "$slot": "origin"
+            },
+            "destination": {
+              "$slot": "destination"
+            },
+            "date": {
+              "$slot": "date"
+            }
+          }
+        }
+      ]
     }
   },
   "perception": {
@@ -563,9 +642,34 @@
           "BLR",
           0.99
         ]
+      },
+      "demo/media/ticket.png": {
+        "date": [
+          "Sat",
+          0.9
+        ],
+        "origin": [
+          "BLR",
+          0.9
+        ],
+        "destination": [
+          "DEL",
+          0.9
+        ]
       }
     },
-    "transcripts": {}
+    "transcripts": {
+      "demo/media/find_delhi.aiff": {
+        "text": "Find a flight from Bangalore to Delhi on Friday"
+      },
+      "demo/media/wait_mumbai.aiff": {
+        "text": "Wait Mumbai instead"
+      },
+      "demo/media/ticket_request.aiff": {
+        "text": "Find flights from Bangalore to Delhi on the date on this ticket"
+      }
+    }
   },
-  "_comment_compromised": "planner['thanks, which one is cheapest?'] deliberately simulates a COMPROMISED planner that obeys an instruction injected into a tool result; the kernel must refuse it (D13 authorisation, tainted literal)."
+  "_comment_compromised": "planner['thanks, which one is cheapest?'] deliberately simulates a COMPROMISED planner that obeys an instruction injected into a tool result; the kernel must refuse it (D13 authorisation, tainted literal).",
+  "_comment_demo": "perception transcripts/frames for demo/media/* are the FALLBACK used only where the on-device ASR helper or tesseract is unavailable (e.g. Linux/Docker); on macOS the real recognisers run."
 }

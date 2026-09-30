@@ -1,0 +1,44 @@
+
+=== demo_audio_interruption ===
+DEMO 1 (real audio). The user asks by voice for a Bangalore-Delhi flight; while the (slow) Delhi search runs, the user says 'Wait, Mumbai instead.' The Delhi search is cancelled the moment the transcript arrives, a Mumbai search starts, the Delhi result arrives late and is ignored, and the final answer is grounded on the Mumbai result only.
+
+agent: planner={'backend': 'scripted'}  perception=local (latency measured)
+
+  0.10s  USER   speaks (find_delhi.aiff)
+  0.27s  [heard: "Find a flight from Bangalore to Delhi on Friday"]
+  0.52s  [plan: search_flights {'date': 'Fri', 'destination': 'DEL', 'origin': 'BLR'}]
+  0.52s  AGENT  -> tool.call c1 search_flights {"date": "Fri", "destination": "DEL", "origin": "BLR"}
+  0.52s  AGENT  says: "On it: search flights (date Fri, destination DEL, origin BLR)."
+  3.00s  USER   speaks (wait_mumbai.aiff)
+  3.16s  [heard: "Wait Mumbai instead"]
+  3.16s  AGENT  -> tool.cancel c1  (superseded by the newer request)
+  3.16s  AGENT  says: "Okay, changing the destination."
+  3.41s  [plan: search_flights {'destination': 'BOM'}]
+  3.41s  AGENT  -> tool.call c2 search_flights {"date": "Fri", "destination": "BOM", "origin": "BLR"}
+  3.41s  AGENT  says: "On it: search flights (date Fri, destination BOM, origin BLR)."
+  4.41s  TOOL   <- result c2 ok {"flights": [{"date": "Fri", "id": "BOM-701", "price": 4120}]}
+  4.41s  AGENT  FINAL: "search flights done: flight: date Fri, id BOM-701, price 4120."  grounded_on=['c2']  snapshot={'date': 'Fri', 'destination': 'BOM', 'origin': 'BLR'}
+  6.52s  TOOL   <- result c1 ok {"flights": [{"date": "Fri", "id": "DEL-701", "price": 4120}]}  <-- STALE (call was superseded)
+  6.52s  [late result for superseded c1: recorded, NOT used]
+
+evaluator (INTERNAL PRISM-STYLE): PASS  score 99.95  first-response per turn [0.319238, 0.060479] s  end-to-end 4.410479 s
+
+=== demo_ticket_image ===
+DEMO 2 (real audio + real image). The user asks by voice for flights 'on the date on this ticket' and shows a boarding pass. OCR reads SATURDAY; that evidence fills the date of the current goal, the search runs for Saturday, and the answer is grounded on it. The planner never invents the date.
+
+agent: planner={'backend': 'scripted'}  perception=local (latency measured)
+
+  0.10s  USER   speaks (ticket_request.aiff)
+  0.20s  USER   shows an image (ticket.png)
+  0.28s  [heard: "Find flight flights from Bangalore to Delhi on the date on this ticket"]
+  0.35s  [image read: date=Sat (0.96), destination=DEL (0.94), origin=BLR (0.90)]
+  0.35s  [image evidence kept until its task exists]
+  0.55s  [plan: search_flights {'destination': 'DEL', 'origin': 'BLR'}]
+  0.55s  AGENT  -> tool.call c1 search_flights {"date": "Sat", "destination": "DEL", "origin": "BLR"}
+  0.55s  AGENT  says: "On it: search flights (date Sat, destination DEL, origin BLR)."
+  2.05s  TOOL   <- result c1 ok {"flights": [{"date": "Sat", "id": "DEL-701", "price": 4120}]}
+  2.05s  AGENT  FINAL: "search flights done: flight: date Sat, id DEL-701, price 4120."  grounded_on=['c1']  snapshot={'date': 'Sat', 'destination': 'DEL', 'origin': 'BLR'}
+
+evaluator (INTERNAL PRISM-STYLE): PASS  score 100.0  first-response per turn [0.25] s  end-to-end 2.05 s
+
+traces and agent journals: demo/output

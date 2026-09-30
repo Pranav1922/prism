@@ -1,0 +1,11 @@
+.git
+.venv
+.build
+**/__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.hypothesis
+demo/output
+fwdsamsungprismgenaihackathon3_0registrationli
+*.egg-info

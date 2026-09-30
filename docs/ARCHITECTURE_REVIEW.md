@@ -920,6 +920,18 @@ A turn whose classes are only STATUS_QUERY/BACKCHANNEL is answered from state (P
 
 In addition, a proposal that fails `agent/proposal.check` (unknown tool or parameter, forward or circular dependency, duplicate state-changing task, bad shape) changes nothing (`PROP.invalid`). When the newest task-changing request fails, the agent says so instead of going silent.
 
+### D16 — An end of turn waits for its transcript; early evidence applies when its goal is created (final integration)
+
+**Evidence.** With real speech recognition, the harness's `user.turn_end` arrives before the transcript. The turn had no content yet, so the end of turn was discarded, and the turn then waited for the 1 s silence timer.
+
+Separately, real OCR can finish before the planner has created the goal. The evidence was kept (EV.not_active) but never applied when the goal appeared, although F3 attaches evidence to its turn's goal.
+
+**Decision.**
+- **End of turn.** An end of turn that arrives while audio of that turn is still being transcribed is remembered (`TURN.await_transcript`). The turn closes in the step that receives the last pending transcript. If recognition fails, the agent says it did not understand.
+- **Early evidence.** When a goal is created, frames waiting for a goal are attached to it and their claims are applied then, with the usual last-writer-wins and conflict rules. The frame's `seq` is the `writer_seq`.
+
+Both are implementations of F3/F5 as written.
+
 ---
 
 # FINAL ARCHITECTURE — APPROVED FOR IMPLEMENTATION

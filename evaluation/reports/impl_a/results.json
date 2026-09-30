@@ -2516,6 +2516,266 @@
   },
   {
    "categories": {
+    "interruption_recovery": 1.0,
+    "response_latency": 0.8056,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Fri",
+       "destination": "BOM",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"destination\": \"BOM\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "interruption_recovery",
+     "check": "no_stale_rerun_after:fix",
+     "passed": true,
+     "stale": []
+    },
+    {
+     "bad": [],
+     "category": "interruption_recovery",
+     "check": "answer_not_grounded_on_superseded_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "turn_answered:ask_end",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "turn_answered:fix_end",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "info": [],
+   "internal_score": 97.08,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 5.05,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.825,
+    "turn_first_substantive_s": [
+     0.95,
+     0.7
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": false,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "demo_audio_interruption",
+   "scenario_sha256": "d0278134765dae4a78f31198bc9844a5db6f511c98899ee14b0820a20063c562",
+   "tags": [
+    "demo",
+    "audio",
+    "interruption",
+    "stale_result"
+   ]
+  },
+  {
+   "categories": {
+    "interruption_recovery": null,
+    "response_latency": 0.7963,
+    "safety_protocol": 1.0,
+    "task_completion": 1.0
+   },
+   "checks": [
+    {
+     "category": "task_completion",
+     "check": "final_response_present",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_complete_flag",
+     "got": true,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "final_snapshot_matches",
+     "got": {
+      "intent": "search_flights",
+      "slots": {
+       "date": "Sat",
+       "destination": "DEL",
+       "origin": "BLR"
+      }
+     },
+     "passed": true
+    },
+    {
+     "bad": [],
+     "category": "task_completion",
+     "check": "final_grounded_on_completed_current_work",
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "calls:search_flights:{\"date\": \"Sat\", \"destination\": \"DEL\"}",
+     "count": 1,
+     "passed": true
+    },
+    {
+     "category": "task_completion",
+     "check": "turn_answered:ask_end",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "outputs_valid",
+     "passed": true,
+     "violations": 0
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_output_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "unique_call_ids",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "cancels_reference_known_calls",
+     "passed": true,
+     "unknown": []
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "no_cancel_after_known_result",
+     "passed": true
+    },
+    {
+     "calls": [],
+     "category": "safety_protocol",
+     "check": "at_most_one_cancel_per_call",
+     "passed": true
+    },
+    {
+     "category": "safety_protocol",
+     "check": "protocol_errors_as_expected",
+     "count": 0,
+     "passed": true
+    }
+   ],
+   "info": [],
+   "internal_score": 95.3,
+   "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
+   "latency": {
+    "end_to_end_s": 2.65,
+    "interrupt_to_cancel_s": [],
+    "turn_first_substantive_p50_s": 0.85,
+    "turn_first_substantive_s": [
+     0.85
+    ],
+    "unanswered_turns": []
+   },
+   "multimodal": true,
+   "naturalness": {
+    "fillers": 0,
+    "repeated_utterances": 0,
+    "speech_while_user_speaking": 0
+   },
+   "passed": true,
+   "scenario": "demo_ticket_image",
+   "scenario_sha256": "b94c1951437170be73b44af5a460ad4f2a4d23d2fcd740f1bb3f79fcbe8ddf6d",
+   "tags": [
+    "demo",
+    "audio",
+    "multimodal",
+    "evidence"
+   ]
+  },
+  {
+   "categories": {
     "interruption_recovery": null,
     "response_latency": 1.0,
     "safety_protocol": 1.0,
