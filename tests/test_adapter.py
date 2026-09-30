@@ -211,3 +211,10 @@ def test_harness_events_at_time_t_precede_the_agents_own_timers_at_t():
     assert outs[-1]["data"]["next_wakeup"] is not None
     rules = [r["rule"] for rec in a.journal.of_type("step") for r in rec["rules"]]
     assert "TIMER.fire" not in rules  # the explicit end of turn at 1.25 won; the timer was disarmed
+
+
+def test_world_never_answers_before_the_call_arrives():
+    from evaluation.world import World
+    w = World({"t": {"behaviors": [{"at": 2.0, "status": "ok", "data": 1}]}}, [{"name": "t"}])
+    assert [t for t, _ in w.on_output({"type": "tool.call", "data": {"call_id": "c1", "tool": "t", "args": {}}}, 1.0)] == [2.0]
+    assert [t for t, _ in w.on_output({"type": "tool.call", "data": {"call_id": "c2", "tool": "t", "args": {}}}, 6.0)] == [6.0]

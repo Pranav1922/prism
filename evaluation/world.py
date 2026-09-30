@@ -82,7 +82,7 @@ class World:
         out: list[tuple[float, dict]] = []
         if b.get("latency") is None and "at" not in b:
             return out  # never answers
-        when = b["at"] if "at" in b else t + b["latency"]
+        when = max(b["at"], t) if "at" in b else t + b["latency"]  # never before the call itself (time only moves on)
         delivery = {"call_id": call.call_id, "status": b.get("status", "ok"), "executed": b.get("executed"),
                     "data": self._data(b, call)}
         out.append((when, delivery))

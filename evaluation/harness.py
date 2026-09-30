@@ -43,7 +43,7 @@ def wire(mid: str, t: float, typ: str, data: dict | None = None) -> str:
     return json.dumps({"v": VERSION, "id": mid, "t": t, "type": typ, "data": data or {}}, sort_keys=True)
 
 
-def run(scenario: dict, agent_cmd: list[str]) -> dict:
+def run(scenario: dict, agent_cmd: list[str], reply_timeout_s: float = 10.0) -> dict:
     world = World(scenario.get("world", {}), scenario["manifest"])
     records: list[dict] = []
     violations: list[dict] = []
@@ -61,7 +61,7 @@ def run(scenario: dict, agent_cmd: list[str]) -> dict:
         schedule(float(inp["t"]), int(inp.get("rank", 0)), ("send", line))
     schedule(horizon, 9, ("send", wire("s-end", horizon, "session.end")))
 
-    agent = SubprocessAgent(agent_cmd, scenario["id"])
+    agent = SubprocessAgent(agent_cmd, scenario["id"], reply_timeout_s)  # wall-clock guard only; scores use virtual time
     wake: float | None = None
     n_tick = 0
     try:

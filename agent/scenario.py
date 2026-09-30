@@ -182,7 +182,7 @@ PLANS: dict[str, dict] = {
     FIND: {"intent": "search_flights", "slot_writes": {"origin": "BLR", "destination": "DEL", "date": "Fri"},
            "graph": SEARCH_GRAPH},
     "actually, to Mumbai": {"intent": "search_flights", "slot_writes": {"destination": "BOM"}},
-    "book flight 6E-701": {"intent": "book_flight", "slot_writes": {"flight_id": "6E-701", "passengers": 1},
+    "book flight 6E-701 for one person": {"intent": "book_flight", "slot_writes": {"flight_id": "6E-701", "passengers": 1},
                            "graph": [{"node_id": "b1", "tool": "book_flight",
                                       "args": {"flight_id": {"$slot": "flight_id"}, "passengers": {"$slot": "passengers"}}}]},
     "wait, two of us": {"intent": "book_flight", "slot_writes": {"passengers": 2}},
@@ -221,7 +221,7 @@ def scenario_d(honors_cancel: bool = False, **kw: Any) -> Sim:
     """Booking starts, correction supersedes it, cancel requested; the tool may still complete."""
     tools = {"book_flight": Behavior(1.0, data={"booking_id": "B1"}, honors_cancel=honors_cancel)}
     sim = Sim(MANIFEST, tools, ScriptedPlanner(PLANS), **kw)
-    return sim.run([(0.1, say("book flight 6E-701")), (0.3, eot()),
+    return sim.run([(0.1, say("book flight 6E-701 for one person")), (0.3, eot()),
                     (0.8, say("wait, two of us", "CORRECTION", {"passengers": 2})), (1.0, eot())])
 
 

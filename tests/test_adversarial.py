@@ -21,7 +21,7 @@ from agent.scenario import (
 )
 from tests.invariants import CheckedKernel
 
-BOOK = "book flight 6E-701"
+BOOK = "book flight 6E-701 for one person"
 
 
 def sim(tools=None, plans=None, manifest=None, **kw):

@@ -151,7 +151,7 @@ def test_correction_storms_final_answer_matches_last_correction(storm):
 def test_booking_races_never_create_twice_while_unresolved(correct_at, latency, honors, close_after):
     tools = {"book_flight": Behavior(latency, data={"booking_id": "B1"}, honors_cancel=honors)}
     sim = Sim(MANIFEST, tools, ScriptedPlanner(PLANS), kernel_factory=CheckedKernel).run(
-        [(0.1, say("book flight 6E-701")), (0.3, eot()),
+        [(0.1, say("book flight 6E-701 for one person")), (0.3, eot()),
          (correct_at, say("wait, two of us", "CORRECTION", {"passengers": 2})), (correct_at + close_after, eot())])
     assert replay(sim.journal, kernel_from_header).identical
     calls = list(sim.calls().values())
