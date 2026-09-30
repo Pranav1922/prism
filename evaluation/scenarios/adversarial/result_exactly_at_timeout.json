@@ -1,6 +1,6 @@
 {
  "id": "result_exactly_at_timeout",
- "description": "The tool result lands exactly at its timeout instant: it counts as on time (events before timers); no cancel, no retry.",
+ "description": "The tool result lands exactly at its timeout instant (latency = timeout_s = 1.25 s after the call, whenever the call is made): it counts as on time (events before timers); no cancel, no retry.",
  "tags": [
   "adversarial",
   "timing",
@@ -18,7 +18,7 @@
   "search_flights": {
    "behaviors": [
     {
-     "at": 2.0,
+     "latency": 1.25,
      "status": "ok",
      "gen": "flights"
     }

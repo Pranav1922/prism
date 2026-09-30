@@ -952,15 +952,15 @@ async function init() {
     if (f) uploadAndSend("frame", f, f.type === "image/png" ? "png" : "jpg");
   });
 
-  // push-to-talk: hold the button, or hold M. While held, 16 kHz PCM streams to the on-device recogniser every
-  // 250 ms and the words it is sure of reach the agent as the turn goes on (D17). Release -> the rest + end of turn.
+  // push-to-talk: hold the button, or hold M. While held, 16 kHz PCM streams to the on-device recogniser for every
+  // 250 ms of captured audio (paced by the audio callback, not a page timer, which browsers throttle in background tabs) and the words it is sure of reach the agent as the turn goes on (D17). Release -> the rest + end of turn.
   // No streaming (or nothing recognised) -> the file path: 16 kHz WAV -> upload -> user.audio -> on-device recognition.
   const mic = $("#mic");
   const status = (text) => { $("#mic-status").textContent = text; };
   let rec = null, busy = false, tick = null, autoStop = null, stream = null;
   const openStream = (r) => {
     if (!(S.caps || META?.capabilities)?.asr.stream) return null;
-    const st = { id: null, failed: false, blocks: [], flushed: 0 };
+    const st = { id: null, failed: false, blocks: [], buffered: 0 };
     st.chain = api("/api/voice/start", {}).then((x) => { st.id = x.id; }).catch(() => { st.failed = true; });
     st.flush = () => {
       if (!st.blocks.length || st.failed) return st.chain;
@@ -968,11 +968,14 @@ async function init() {
       st.chain = st.chain.then(() => st.id && !st.failed && api(`/api/voice/chunk?id=${st.id}`, pcm, true)).catch(() => { st.failed = true; });
       return st.chain;
     };
-    st.timer = setInterval(st.flush, 250);
+    st.push = (block) => {
+      st.blocks.push(block);
+      st.buffered += block.length;
+      if (st.buffered >= r.rate / 4) { st.buffered = 0; st.flush(); }
+    };
     return st;
   };
   const closeStream = async (st, cancel) => {
-    clearInterval(st.timer);
     await st.flush();
     if (st.failed || !st.id) return null;
     try { return await api(`/api/voice/end?id=${st.id}${cancel ? "&cancel=1" : ""}`, {}); } catch { return null; }
@@ -985,7 +988,7 @@ async function init() {
     if (S.info?.mode === "guided") { toast("A guided demo is running: its inputs come from the scenario file. Click “Go live” to talk.", true); return; }
     const blocked = micBlocked();
     if (blocked) { toast(`Microphone unavailable: ${blocked}.`); return; }
-    rec = new Recorder(level, (block) => stream?.blocks.push(block));
+    rec = new Recorder(level, (block) => stream?.push(block));
     let started;
     try { started = rec.start(); } catch (e) { rec = null; toast(`Microphone unavailable: ${e.message}`); return; }  // inside the gesture
     stream = openStream(rec);

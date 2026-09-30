@@ -45,14 +45,14 @@
     {
       "mode": "half duplex",
       "user_chunk_step_ms_p50": 0.029,
-      "p95": 0.053,
+      "p95": 0.052,
       "n": 600,
       "clock": "wall (decide + apply of one kernel step)"
     },
     {
       "mode": "full duplex",
-      "user_chunk_step_ms_p50": 0.032,
-      "p95": 0.066,
+      "user_chunk_step_ms_p50": 0.031,
+      "p95": 0.064,
       "n": 600,
       "clock": "wall (decide + apply of one kernel step)"
     }
@@ -60,30 +60,30 @@
   "busy_deep_planner": {
     "deep_planner": "ollama:qwen2.5:7b",
     "planner_busy_when_interrupted": true,
-    "interruption_to_cancel_ms_while_planner_busy": 1.0,
-    "deep_planner_execution_ms": 4747.0,
+    "interruption_to_cancel_ms_while_planner_busy": 0.62,
+    "deep_planner_execution_ms": 10435.0,
     "clock": "wall (live AsyncRuntime)"
   },
   "real_perception": {
     "asr_file_after_release": {
       "find_delhi": {
         "text": "Find a flight from Bangalore to Delhi on Friday",
-        "wall_s": 0.549
+        "wall_s": 2.53
       },
       "wait_mumbai": {
         "text": "Wait Mumbai instead",
-        "wall_s": 0.199
+        "wall_s": 0.205
       }
     },
     "asr_streaming": {
       "audio_s": 3.06,
       "partial_hypotheses": 12,
-      "first_partial_at_s": 0.84,
+      "first_partial_at_s": 0.85,
       "partials_before_audio_ended": 11,
-      "final_after_audio_end_s": 0.033,
+      "final_after_audio_end_s": 0.039,
       "final_text": "Find a flight from Bangalore to Delhi on Friday"
     },
-    "ocr_ticket_wall_s": 0.189,
+    "ocr_ticket_wall_s": 0.275,
     "clock": "real wall time of the on-device recogniser (Apple Speech) and tesseract on this machine"
   },
   "blackbox": [
@@ -103,14 +103,14 @@
     },
     {
       "agent": "impl_a_duplex",
-      "passed": 58,
+      "passed": 59,
       "total": 59,
       "speculative_calls_started": 44,
-      "speculative_calls_superseded": 26,
-      "speculative_late_results_refused": 19,
+      "speculative_calls_superseded": 25,
+      "speculative_late_results_refused": 18,
       "speculative_state_changing_calls": 0,
       "scenarios_with_early_work": 43,
-      "tool_calls_total": 94,
+      "tool_calls_total": 93,
       "first_substantive_response_p50_s": 0.0,
       "first_substantive_response_mean_s": 0.082,
       "clock": "virtual; the unchanged black-box evaluator; mock tools"

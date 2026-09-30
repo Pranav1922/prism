@@ -1377,10 +1377,10 @@
   },
   {
    "categories": {
-    "interruption_recovery": 0.0,
+    "interruption_recovery": 1.0,
     "response_latency": 1.0,
     "safety_protocol": 1.0,
-    "task_completion": 0.8
+    "task_completion": 1.0
    },
    "checks": [
     {
@@ -1416,16 +1416,14 @@
     {
      "category": "task_completion",
      "check": "calls:search_flights:{\"destination\": \"DEL\"}",
-     "count": 2,
-     "passed": false
+     "count": 1,
+     "passed": true
     },
     {
-     "cancelled": [
-      "c1"
-     ],
+     "cancelled": [],
      "category": "interruption_recovery",
      "check": "no_unnecessary_cancel",
-     "passed": false
+     "passed": true
     },
     {
      "category": "safety_protocol",
@@ -1469,10 +1467,10 @@
     }
    ],
    "info": [],
-   "internal_score": 57.0,
+   "internal_score": 100.0,
    "label": "INTERNAL PRISM-STYLE METRICS (not a Samsung score)",
    "latency": {
-    "end_to_end_s": 2.0,
+    "end_to_end_s": 1.6,
     "interrupt_to_cancel_s": [],
     "turn_first_substantive_p50_s": 0.0,
     "turn_first_substantive_s": [
@@ -1486,9 +1484,9 @@
     "repeated_utterances": 0,
     "speech_while_user_speaking": 0
    },
-   "passed": false,
+   "passed": true,
    "scenario": "result_exactly_at_timeout",
-   "scenario_sha256": "5b5c8b29a7474b8d6cdc232ec6cb6f03a751bcc05cf8264bc80f14947b0c422f",
+   "scenario_sha256": "3727a6695b20f28b197fe75e852acb00639303c284e677bcd968aef73b3f24a8",
    "tags": [
     "adversarial",
     "timing",

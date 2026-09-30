@@ -16,7 +16,7 @@
 | malformed_tool_manifest | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.00 | - |
 | non_cancellable_state_changing | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | - |
 | older_evidence_vs_newer_user_value | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.00 | - |
-| result_exactly_at_timeout | **NO** | 57.0 | 0.80 | 0.00 | 1.00 | 1.00 | 0.00 | - |
+| result_exactly_at_timeout | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.00 | - |
 | retry_budget_exhausted | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.00 | - |
 | revert_value_reruns | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.00 | - |
 | state_changing_not_executed_retry | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
@@ -64,6 +64,5 @@
 | status_question_during_search | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.00 | - |
 | two_slots_one_utterance | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.00 | 0.000 |
 
-**58/59 scenarios pass all checks; mean internal score 99.1.**
+**59/59 scenarios pass all checks; mean internal score 99.8.**
 
-- `result_exactly_at_timeout` failed: calls:search_flights:{"destination": "DEL"}; no_unnecessary_cancel

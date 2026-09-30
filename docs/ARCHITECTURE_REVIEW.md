@@ -948,7 +948,8 @@ Both are implementations of F3/F5 as written.
 
 **Measured (scripts/bench_duplex.py; INTERNAL).**
 - The original 58 black-box scenarios are score-identical with the policy off, and the evaluator baseline (`impl_a`) keeps it off.
-- With it on (`impl_a_duplex`): 58/59 pass. The one failure, `result_exactly_at_timeout`, schedules its tool result at an absolute time chosen for D5 dispatch timing; starting the call 0.4 s earlier moves its timeout before the result, so the agent correctly times out and retries.
+- With it on (`impl_a_duplex`): 59/59 pass.
+- **Tool-timing semantics (fixture correction).** In the mock tool world, `latency: L` delivers the result at the actual `tool.call` time + L, in every mode, in replay and in Docker; `at: T` is an absolute scenario time, kept for results that must coincide with a scripted user input (`H_same_time_*`). `result_exactly_at_timeout` means "the result lands exactly at its timeout instant". It had encoded that as `at: 2.0`, which equals call + timeout only when the call starts at the end of turn (0.75 + 1.25). With early dispatch (0.35), that absolute time fell 0.4 s after the timeout, and the agent correctly timed out and retried. The scenario now says `latency: 1.25` (= its `timeout_s`). Half-duplex instants are unchanged (0.75 → 2.0; identical score); full duplex gives 0.35 → 1.6; both are on time with no cancel. No timeout, agent or world code changed. `tests/test_full_duplex.py::test_a_tool_latency_is_relative_to_the_actual_call_in_both_modes` pins it.
 - The median first substantive response goes from 0.25 s to 0.0 s (virtual), and 0 speculative state-changing calls are made.
 - The console runs with the policy on.
 

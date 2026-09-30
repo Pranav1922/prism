@@ -363,3 +363,22 @@ def test_k19_the_validated_baseline_is_unchanged_by_default():
     sim = demo(config=Config())  # half duplex: D5, nothing starts while the user speaks
     assert all(dispatched_at(sim, c.call_id) >= 1.6 for c in calls(sim)) and dests(sim) == ["BOM"]
     assert not rules(sim, "PROP.speculative") and all(r.get("purpose") is None for r in rules(sim, "PLANNER.request"))
+
+
+@pytest.mark.parametrize("agent", ["impl_a", "impl_a_duplex"])
+def test_a_tool_latency_is_relative_to_the_actual_call_in_both_modes(agent):
+    """`result_exactly_at_timeout`: the result lands exactly timeout_s after the call, whether the call starts at the
+    end of turn (half duplex) or before it (full duplex); events before timers, so it is on time: no cancel, no retry."""
+    from evaluation import harness, metrics
+    from evaluation.agents import resolve
+    from evaluation.scenario import load
+    scenario = load(ROOT / "evaluation" / "scenarios" / "adversarial" / "result_exactly_at_timeout.json")
+    trace = harness.run(scenario, resolve(agent))
+    msgs = [(r["t"], r.get("msg") or json.loads(r["raw"])) for r in trace["records"]]
+    call = next(t for t, m in msgs if m["type"] == "tool.call")
+    result = next(t for t, m in msgs if m["type"] == "tool.result")
+    timeout = next(t["timeout_s"] for t in scenario["manifest"] if t["name"] == "search_flights")
+    assert result - call == pytest.approx(timeout, abs=1e-9)
+    assert (call < 0.5) is (agent == "impl_a_duplex")  # early only with full duplex (the turn ends at 0.5)
+    assert not [m for _, m in msgs if m["type"] == "tool.cancel"]
+    assert metrics.evaluate(scenario, trace)["passed"]

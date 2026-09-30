@@ -19,7 +19,7 @@ uv venv --python 3.12 .venv && uv pip install -e ".[dev]"   # setup (Python 3.10
 ./scripts/build_asr.sh                                      # macOS: on-device speech recognition helper
 .venv/bin/python -m frontend.server --open                  # the live console: http://127.0.0.1:8765
 .venv/bin/python demo/run_demo.py                           # the two demos in the terminal (add --speak to hear them)
-.venv/bin/python -m pytest                                  # 447 tests
+.venv/bin/python -m pytest                                  # 449 tests
 .venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 59 scenarios (impl_a_duplex: full duplex)
 .venv/bin/python scripts/bench_duplex.py                    # full-duplex measurements (virtual / wall / real ASR-OCR)
 docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + evaluation on Linux
@@ -39,7 +39,7 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
   - See the architecture decision [D17](docs/ARCHITECTURE_REVIEW.md) and the audit in [`SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md).
 - **Black-box evaluation (INTERNAL):** 59/59 scenarios pass with the evaluator baseline (`impl_a`, full duplex off). The original 58 are score-identical to before; mean internal score 99.8 ([report](evaluation/reports/final/report.md)).
   - Suites: reference 12/12, adversarial 22/22, understanding 13/13, planner 9/9, demo 3/3.
-  - With full duplex on (`impl_a_duplex`): 58/59. The exception, `result_exactly_at_timeout`, is timed for end-of-turn dispatch (see D17).
+  - With full duplex on (`impl_a_duplex`): 59/59 as well; no scenario is skipped or special-cased (one fixture's result time was re-expressed relative to the call, see D17).
   - Interruption → cancel is 0.00 s (virtual; same kernel step), and 1.1 ms wall-clock while a planner call is running.
 - **Real input:**
   - audio via Apple on-device speech recognition (macOS) → fast understanding → kernel;
@@ -53,7 +53,7 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
   - no false completion.
 
   Each is checked on every kernel step by the invariant checker (INV-01…23 plus decisions D13/D14).
-- **Tests:** 447 pass on Python 3.10 and 3.12; ruff and mypy clean.
+- **Tests:** 449 pass on Python 3.10 and 3.12; ruff and mypy clean.
 
 ### Build history
 
