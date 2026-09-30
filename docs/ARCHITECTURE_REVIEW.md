@@ -140,7 +140,7 @@ In the tables below, **RO** means read-only tool and **SM** means state-modifyin
 | `EgressError` feedback event | **REMOVE** | A rejected FINAL is a bug to catch in tests, not a runtime path. The adapter logs and emits a minimal template fallback itself. |
 | Read-only cancel-grace timer & `CANCELLED` state | **REMOVE** | Logical cancellation is immediate and final for read-only calls; waiting for acks adds states without changing decisions |
 | Hold-time result buffering | **REMOVE** | CF-13. Results are always admitted by the normal rule; `hold` only blocks mutation dispatch and FINAL. |
-| Speculative (pre-EOT) tool calls | **REMOVE for now** (OPTIONAL later) | Unmeasured benefit, and possible scorer penalty for cancelled calls. Re-enable only with public-suite evidence. |
+| Speculative (pre-EOT) tool calls | **REMOVE for now** (OPTIONAL later) → **re-enabled for read-only calls, opt-in, by D17** | Unmeasured benefit, and possible scorer penalty for cancelled calls. Re-enable only with public-suite evidence. D17 records that evidence. |
 | Pre-EOT T1 on partial transcripts | **OPTIONAL** | Latency hiding; adds cancellation churn. After measurement. |
 | Evidence fusion "policy engine" | **USEFUL**, simplified | A fixed rule table (§8.5) |
 | Compensation (modify/cancel tools) automation | **OPTIONAL** | Default is to ask the user. Auto-compensate only if the manifest has an explicit modify/cancel tool and the kit's scenarios show it expected. |
@@ -834,6 +834,8 @@ These decisions resolve every contradiction that remained after §1–§15 and t
 - It doesn't affect the scored latency, since the acknowledgement is spoken at turn close together with the dispatch.
 - The deck's "begin retrieving before the utterance ends" is copied from Theme 04 (audit §0.2 of `ARCHITECTURE.md`) and is not a Theme 05 requirement.
 
+**Amended by D17:** with `Config.full_duplex`, read-only calls may start while the turn is open. D5 is still the default policy, and it still holds for every state-changing call.
+
 ### D6 — Superseded results vs reconciliation of committed side effects
 
 **Contradiction.** Compensation (`modify_booking(B1)`) needs B1 from a *superseded* attempt, but stale results are never used.
@@ -932,6 +934,23 @@ Separately, real OCR can finish before the planner has created the goal. The evi
 - **Early evidence.** When a goal is created, frames waiting for a goal are attached to it and their claims are applied then, with the usual last-writer-wins and conflict rules. The frame's `seq` is the `writer_seq`.
 
 Both are implementations of F3/F5 as written.
+
+### D17 — Full duplex: read-only work may start before the end of turn (opt-in; amends D5)
+
+**Evidence.** The official Theme 05 brief asks for full-duplex behaviour in which retrieval can begin before the utterance ends. D5 had set this aside as a Theme 04 line; the brief states it for Theme 05 too. The on-device recogniser also turned out to stream (Apple Speech partial results, `prism_asr --stream`), so a spoken request reaches the agent word by word while the user speaks.
+
+**Decision.** A kernel policy, `Config.full_duplex` (default off). When it is on:
+- **Partial planning.** Each content chunk of an open turn may send the planner a request with purpose `speculate`, at most one at a time (a newer chunk is planned when the open request answers). The view carries `partial: true`; the deterministic planner then skips its noise-tolerant known-example stage, so half a sentence never borrows the rest of an example. No acknowledgement timer is armed.
+- **What a partial plan may change.** Its slot values are written with source `PARTIAL` and are unconfirmed (never treated as final). It may create the first goal, but never switch or suspend an existing one (`PROP.speculative_no_switch`). Its questions, replies and failures are not spoken, and D12 does not revert on it. A partial answer that arrives after the turn has ended is ignored (`PROP.speculative_late`). When the plan of the finished turn keeps a PARTIAL value, the value becomes the planner's and is confirmed (`SLOT.confirm by=final_plan`).
+- **What may start early.** Only READ_ONLY calls, through the unchanged reconciliation (content keys, relevance, D1/D2/D7, retries). They start only when the turn holds no correction marker (`hold`): while the user is correcting themselves, cancels are immediate, and the new search starts at the end of turn. The dispatch is journaled with `early: true`. A state-changing call never starts while a turn is open; the barrier, ledger and D13/D14 rules are untouched.
+- **Speech and answers.** Nothing is said while the user holds the floor (INV-20). At the end of turn, running early work is acknowledged ("Already on it: …"). An answer from early work waits until the finished turn has been planned.
+- **Invariants.** INV-12 allows read-only dispatch in an open turn only under this policy, and only without `hold`; a state-changing dispatch in an open turn is still a violation.
+
+**Measured (scripts/bench_duplex.py; INTERNAL).**
+- The original 58 black-box scenarios are score-identical with the policy off, and the evaluator baseline (`impl_a`) keeps it off.
+- With it on (`impl_a_duplex`): 58/59 pass. The one failure, `result_exactly_at_timeout`, schedules its tool result at an absolute time chosen for D5 dispatch timing; starting the call 0.4 s earlier moves its timeout before the result, so the agent correctly times out and retries.
+- The median first substantive response goes from 0.25 s to 0.0 s (virtual), and 0 speculative state-changing calls are made.
+- The console runs with the policy on.
 
 ---
 
@@ -1033,7 +1052,7 @@ Both are implementations of F3/F5 as written.
   - Invalid tools are quarantined.
   - Side-effect class comes from the manifest field, else a verb lexicon on name and description, else state-changing. The reason is journaled.
   - `cancellable` comes from the manifest, or is null.
-- **Dispatch timing.** No tool call is dispatched while a user turn is open (D5).
+- **Dispatch timing.** No tool call is dispatched while a user turn is open (D5). Exception, opt-in (D17, `Config.full_duplex`): read-only calls of an established goal may start in an open turn that holds no correction marker. State-changing calls never do.
 - **Read-only reconciliation, in each step with no user turn open:**
   - every desired read-only key of the ACTIVE goal with no DESIRED call is dispatched, whatever SUPERSEDED calls share the key (D2);
   - every call whose key is not desired, or whose goal is not ACTIVE, is superseded (D7 decides the cancel).

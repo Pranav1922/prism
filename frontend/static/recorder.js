@@ -17,8 +17,9 @@ export function unsupportedReason(win = globalThis) {
 }
 
 export class Recorder {
-  constructor(onLevel) {
+  constructor(onLevel, onChunk) {
     this.onLevel = onLevel;
+    this.onChunk = onChunk;  // optional: each captured block as it arrives (for streaming recognition)
     this.chunks = [];
     this.peak = 0;
     this.starting = null;
@@ -42,7 +43,9 @@ export class Recorder {
       this.node = this.ctx.createScriptProcessor(4096, 1, 1);
       this.node.onaudioprocess = (e) => {
         const data = e.inputBuffer.getChannelData(0);
-        this.chunks.push(new Float32Array(data));
+        const block = new Float32Array(data);
+        this.chunks.push(block);
+        this.onChunk?.(block);
         let sum = 0, peak = 0;
         for (let i = 0; i < data.length; i += 8) { sum += data[i] * data[i]; peak = Math.max(peak, Math.abs(data[i])); }
         this.peak = Math.max(this.peak, peak);
@@ -99,6 +102,17 @@ export function downsample(buf, from, to) {
     out[i] = s / Math.max(1, end - start);
   }
   return out;
+}
+
+/** Raw 16-bit little-endian PCM (the streaming recogniser's input). Returns an ArrayBuffer. */
+export function pcm16(samples) {
+  const buf = new ArrayBuffer(samples.length * 2);
+  const v = new DataView(buf);
+  for (let i = 0; i < samples.length; i++) {
+    const x = Math.max(-1, Math.min(1, samples[i]));
+    v.setInt16(i * 2, x < 0 ? x * 0x8000 : x * 0x7fff, true);
+  }
+  return buf;
 }
 
 /** RIFF/WAVE, PCM (format 1), mono, 16-bit little-endian. Returns an ArrayBuffer. */

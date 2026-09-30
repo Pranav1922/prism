@@ -149,9 +149,12 @@ def check_step(k: CheckedKernel, before: State, after: State, event: Event, res:
         if b.relevance is Relevance.DESIRED and not (goal and b.goal_id == goal.goal_id and b.key in keys):
             check(acalls[cid].relevance is Relevance.SUPERSEDED, "INV-08", f"{cid} left the desired set but is DESIRED")
 
-    # INV-12 read-only dispatch; nothing dispatched while a user turn is open
+    # INV-12 read-only dispatch; nothing dispatched while a user turn is open (D17: read-only only, in full duplex)
     tool_calls = [a for a in acts if a.kind is ActionKind.TOOL_CALL]
-    if turn_open:
+    if turn_open and k.config.full_duplex:
+        check(all(acalls[a.payload["call_id"]].effect is Effect.READ_ONLY for a in tool_calls), "INV-12",
+              "state-changing call dispatched while a user turn is open")
+    if turn_open and (not k.config.full_duplex or after.get("meta", "hold")):
         check(not tool_calls, "INV-12", "tool call dispatched while a user turn is open")
     elif goal is not None and not after.get("meta", "deadline_passed") and not after.get("meta", "session_ended") \
             and after.get("meta", "switch_pending") != goal.goal_id:  # D11: withheld until the planner answers
@@ -193,7 +196,7 @@ def check_step(k: CheckedKernel, before: State, after: State, event: Event, res:
               f"state-changing {call.tool} that no user utterance of the goal asked for")
         for _, b in node.args:
             reg = after.get("slots", (g.goal_id, b[1])) if b[0] == "slot" else None
-            if reg is not None and reg.source == "PLANNER":
+            if reg is not None and reg.source in ("PLANNER", "PARTIAL"):
                 check(confirmed or said_by_user(reg.value, " ".join(said)), "INV-15/D13",
                       f"state-changing {call.tool} with planner value {reg.value!r} the user never said")
         check(not any(r.open and r.may_change for _, r in after.items("reqs")), "INV-14/D14",

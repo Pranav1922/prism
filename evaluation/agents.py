@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parents[1]
 AGENTS: dict[str, list[str]] = {
     # real ASR/OCR for media files (scripted fallback elsewhere); fixed perception latency keeps runs reproducible
     "impl_a": [sys.executable, "-m", "agent.adapter.stdio", "--perception-latency", "0.8"],
+    "impl_a_duplex": [sys.executable, "-m", "agent.adapter.stdio", "--perception-latency", "0.8", "--full-duplex"],  # D17
     "impl_a_scripted": [sys.executable, "-m", "agent.adapter.stdio", "--understanding", "scripted"],  # comparison only
     # "impl_b": ["<developer B's launcher command>"],
 }

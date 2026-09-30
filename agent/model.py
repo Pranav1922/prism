@@ -219,6 +219,7 @@ class Turn:
     interrupting: bool = False
     t0_writes: tuple = ()  # ((goal_id, slot, writer_seq), ...)
     marker_seqs: tuple[int, ...] = ()  # seqs of chunks carrying correction / goal-switch markers
+    opened_seq: int = 0  # step that opened the turn (D17: calls started since then were started early)
 
 
 @dataclass(frozen=True)

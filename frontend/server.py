@@ -33,9 +33,11 @@ sys.path.insert(0, str(ROOT))
 
 from evaluation.scenario import load  # noqa: E402
 from frontend.live import LiveSession  # noqa: E402
+from frontend.voice_stream import VoiceStream  # noqa: E402
 
 STATIC = ROOT / "frontend" / "static"
 UPLOADS = ROOT / "demo" / "uploads"
+ASR_BIN = Path(os.environ.get("PRISM_ASR_BIN", str(ROOT / ".build" / "prism_asr")))
 MEDIA_DIRS = (ROOT / "demo" / "media", UPLOADS)
 MANIFEST = json.loads((ROOT / "evaluation" / "scenarios" / "manifests" / "flights.json").read_text())
 MAX_UPLOAD = 25 * 2**20
@@ -59,6 +61,11 @@ GUIDED = [
      ["The Delhi search is cancelled in the same step the correction is heard.",
       "The Delhi result still arrives later: it is marked stale and never used.",
       "The answer is grounded on the Mumbai search only."]),
+    ("demo/demo_early_retrieval", "Early retrieval before end of turn", "text chunks",
+     "'Find a flight from Bangalore to Delhi' … 'on Friday' … 'Actually, Mumbai', sent as pieces of one utterance.",
+     ["The Delhi search starts while you are still speaking (full duplex; read-only work only).",
+      "'Actually' cancels it in the same step; the Mumbai search follows.",
+      "The late Delhi result is recorded and refused; the answer is grounded on Mumbai only."]),
     ("demo/demo_ticket_image", "A boarding pass fills in the date", "voice + image",
      "'Find flights … on the date on this ticket' plus a photo of the ticket.",
      ["OCR reads SATURDAY; the evidence lands before the task exists and is applied when it does.",
@@ -146,13 +153,14 @@ def wav_info(body: bytes) -> dict | None:
 def capabilities() -> dict:
     from agent.reasoner.planner import model_available
     wanted = os.environ.get("PRISM_PLANNER", "")
-    asr = (ROOT / ".build" / "prism_asr").is_file() and sys.platform == "darwin"
+    asr = ASR_BIN.is_file() and sys.platform == "darwin"
     planner = {"mode": "deterministic",
                "detail": "deterministic planner: known examples first, then rules for flight search, booking and weather (no model)"}
     if wanted and wanted != "scripted" and model_available(wanted):
         planner = {"mode": "model", "detail": f"{wanted} with per-request deterministic fallback"}
     return {
-        "asr": {"real": asr, "detail": "Apple on-device speech recognition" if asr else "scripted transcripts (ASR helper not built)"},
+        "asr": {"real": asr, "stream": asr, "detail": "Apple on-device speech recognition, streamed while you speak (partial results)"
+                if asr else "scripted transcripts (ASR helper not built)"},
         "ocr": {"real": shutil.which("tesseract") is not None,
                 "detail": "tesseract OCR" if shutil.which("tesseract") else "scripted image claims (tesseract missing)"},
         "planner": planner,
@@ -163,7 +171,7 @@ def capabilities() -> dict:
 
 def agent_cmd() -> list[str]:
     return [sys.executable, "-m", "agent.adapter.stdio", "--planner", "auto", "--perception", "local",
-            "--perception-latency", "measured"]
+            "--perception-latency", "measured", "--full-duplex"]  # D17: read-only work may start before the turn ends
 
 
 class Hub:
@@ -175,6 +183,8 @@ class Hub:
         self.history: list[dict] = []
         self.session: LiveSession | None = None
         self.n = 0
+        self.voice: tuple[int, VoiceStream] | None = None  # the one streaming recording, if any
+        self.n_voice = 0
 
     def publish(self, event: dict) -> None:
         with self.lock:
@@ -305,6 +315,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._input(json.loads(body or b"{}"))
             if url.path == "/api/upload":
                 return self._upload(parse_qs(url.query), body)
+            if url.path.startswith("/api/voice/"):
+                return self._voice(url.path.rsplit("/", 1)[1], parse_qs(url.query), body)
         except (ValueError, KeyError) as exc:
             return self._json({"error": str(exc)}, 400)
         return self.send_error(HTTPStatus.NOT_FOUND)
@@ -334,6 +346,34 @@ class Handler(BaseHTTPRequestHandler):
         else:
             return self._json({"error": "unknown input kind"}, 400)
         return self._json({"ok": True, "t": round(s.now(), 3)})
+
+    def _voice(self, action: str, query: dict, body: bytes) -> None:
+        """Streaming voice (D17): start -> chunk* -> end. See frontend/voice_stream.py for what is and isn't streamed."""
+        s = HUB.session
+        if action == "start":
+            if not capabilities()["asr"].get("stream"):
+                return self._json({"error": "streaming recognition is not available here"}, 503)
+            if s is None or not s.is_alive() or s.scenario is not None:
+                return self._json({"error": "no live session"}, 409)
+            with HUB.lock:
+                if HUB.voice is not None:
+                    HUB.voice[1].end(cancel=True)
+                HUB.n_voice += 1
+                HUB.voice = (HUB.n_voice, VoiceStream(s.inject, str(ASR_BIN)))
+            return self._json({"id": HUB.n_voice})
+        vid = int((query.get("id") or ["0"])[0])
+        with HUB.lock:
+            current = HUB.voice if HUB.voice is not None and HUB.voice[0] == vid else None
+            if current is not None and action == "end":
+                HUB.voice = None
+        if current is None:
+            return self._json({"error": "unknown voice stream"}, 404)
+        if action == "chunk":
+            current[1].feed(body)
+            return self._json({"ok": True})
+        if action == "end":
+            return self._json(current[1].end(cancel=(query.get("cancel") or ["0"])[0] == "1"))
+        return self._json({"error": "unknown voice action"}, 404)
 
     def _upload(self, query: dict, body: bytes) -> None:
         ext = (query.get("ext") or [""])[0].lower()

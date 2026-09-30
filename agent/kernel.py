@@ -65,6 +65,7 @@ class Config:
     sm_max_same_args: int = 2  # state-changing: one retry with identical arguments
     evidence_theta: float = 0.8
     ack_s: float = 0.6  # silence after a turn before "Got it, working that out." while the plan is still being made
+    full_duplex: bool = False  # D17: plan partial turns and start READ-ONLY calls before the user's turn ends
 
 
 def _meta_defaults() -> dict:
@@ -425,7 +426,7 @@ class _Step:
             self.disarm(f"to:{call.call_id}")
         return True
 
-    def dispatch(self, goal: Goal, d: Desired, op_id: tuple | None = None) -> None:
+    def dispatch(self, goal: Goal, d: Desired, op_id: tuple | None = None, early: bool = False) -> None:
         spec = self.registry().get(d.node.tool)
         assert spec is not None and d.args is not None and d.key is not None
         cid = f"c{self.next_n('n_call')}"
@@ -439,7 +440,8 @@ class _Step:
         if idem:
             payload["idempotency_key"] = idem
         self.emit(ActionKind.TOOL_CALL, "REC.dispatch", payload)
-        self.rule("REC.dispatch", call_id=cid, key=d.key, node=d.node.node_id, op=list(op_id) if op_id else None)
+        self.rule("REC.dispatch", call_id=cid, key=d.key, node=d.node.node_id, op=list(op_id) if op_id else None,
+                  **({"early": True} if early else {}))
         self.arm(f"to:{cid}", "tool_timeout", self.now + (spec.timeout_s or self.cfg.tool_timeout_s), cid)
         self.dispatched.append(call)
 
@@ -494,7 +496,8 @@ class _Step:
             else:
                 self.request_planner(turn)
 
-    def request_planner(self, turn: Turn) -> None:
+    def request_planner(self, turn: Turn, purpose: str = "understand") -> None:
+        speculate = purpose == "speculate"
         for rid, req in self.tx.items("reqs"):
             if req.open:
                 self.tx.set("reqs", rid, replace(req, open=False))
@@ -504,11 +507,29 @@ class _Step:
         may_change = not set(turn.classes) <= {TurnClass.STATUS_QUERY.value, TurnClass.BACKCHANNEL.value}
         handled = bool(turn.t0_writes) and all(
             (r := self.tx.get("slots", (g, n))) is not None and r.value is not None for g, n, _ in turn.t0_writes)
-        self.tx.set("reqs", rid, Request(rid, "understand", based, based if based > 0 else None, True, may_change, handled))
-        self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": "understand",
-                             "view": self.planner_view(turn)})
+        self.tx.set("reqs", rid, Request(rid, purpose, based, based if based > 0 else None, True, may_change, handled))
+        view = self.planner_view(turn)
+        if speculate:
+            view["partial"] = True  # D17: the user is still speaking; this text may be incomplete
+        self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": purpose, "view": view})
+        if speculate:
+            self.rule("PLANNER.request", req_id=rid, based_on_seq=based, purpose=purpose)
+            return
         self.arm("ack", "ack_delay", self.now + self.cfg.ack_s, str(self.seq))
         self.rule("PLANNER.request", req_id=rid, based_on_seq=based)
+
+    def speculate(self) -> None:
+        """D17: plan the turn heard so far, one request at a time (a newer chunk is planned when this one answers)."""
+        turn = self.turn()
+        if not self.cfg.full_duplex or turn is None or not turn.open or not turn.content \
+                or self.meta("deadline_passed") or self.meta("session_ended") \
+                or set(turn.classes) <= {TurnClass.STATUS_QUERY.value, TurnClass.BACKCHANNEL.value}:
+            return
+        if any(r.open for _, r in self.tx.items("reqs")):
+            return  # the open request answers first; this chunk is planned right after it
+        planned = max((r.based_on_seq for _, r in self.tx.items("reqs") if r.purpose == "speculate"), default=0)
+        if self.meta("last_content_seq") > planned:
+            self.request_planner(turn, "speculate")
 
     def planner_view(self, turn: Turn) -> dict:
         """The planner contract's INPUT (docs/PHASE5_PLANNER.md §2): a read-only, JSON copy of what the planner
@@ -532,10 +553,11 @@ class _Step:
                         "graph": [node_json(n) for n in goal.graph]}
         view["slots"] = {n: {"value": r.value, "source": r.source, "confirmed": r.confirmed, "writer_seq": r.writer_seq}
                          for (g, n), r in sorted(self.tx.items("slots")) if g == goal.goal_id}
+        node_of = {d.key: d.node.node_id for d in resolve(self.tx, goal) if d.key}  # the CURRENT node wanting each key
         for _, c in self.tx.items("calls"):
             if c.goal_id == goal.goal_id and c.relevance is Relevance.DESIRED:
                 data = json.loads(c.result_json) if c.result_json else None
-                view["results"].append({"node_id": c.node_id, "tool": c.tool, "args": json.loads(c.args_json),
+                view["results"].append({"node_id": node_of.get(c.key, c.node_id), "tool": c.tool, "args": json.loads(c.args_json),
                                         "outcome": c.outcome.value, "data": data})
         for _, f in self.tx.items("frames"):
             if f.goal_id == goal.goal_id:
@@ -594,7 +616,7 @@ class _Step:
         turn = self.turn()
         u = self.understand(text, self.payload, self.understand_context(turn))
         if turn is None or not turn.open:
-            turn = Turn(turn_id=(turn.turn_id + 1) if turn else 1, open=True)
+            turn = Turn(turn_id=(turn.turn_id + 1) if turn else 1, open=True, opened_seq=self.seq)
             self.rule("TURN.open", turn_id=turn.turn_id)
         content = u.cls is not TurnClass.BACKCHANNEL
         marker = u.cls in MARKERS
@@ -643,6 +665,7 @@ class _Step:
             if self.meta("asr_eot") and not self.meta("asr_pending"):  # D16: the turn already ended
                 self.set_meta("asr_eot", False)
                 self.close_turn(inferred=False)
+        self.speculate()
 
     def on_end_of_turn(self) -> None:
         if not self.turn_open() and self.meta("asr_pending"):
@@ -746,6 +769,10 @@ class _Step:
             return
         if req.open:
             self.tx.set("reqs", req.req_id, replace(req, open=False))
+        speculative = req.purpose == "speculate"
+        if speculative and not self.turn_open():
+            self.rule("PROP.speculative_late", req_id=req.req_id)  # the whole turn is being planned now (D17)
+            return
         errors = check_proposal(self.payload, self.registry())
         if errors:  # a malformed proposal changes nothing (docs/PHASE5_PLANNER.md §5)
             self.rule("PROP.invalid", req_id=req.req_id, errors=errors[:5])
@@ -753,7 +780,7 @@ class _Step:
             return
         based = req.based_on_seq
         structure_ok = based >= self.meta("goal_switch_seq")  # F4: no newer content changed the intent
-        if self.meta("switch_pending") is not None and structure_ok:
+        if self.meta("switch_pending") is not None and structure_ok and not speculative:
             self.set_meta("switch_pending", None)
             self.rule("SWITCH.answered", req_id=req.req_id)
         intent = self.payload.get("intent")
@@ -761,12 +788,16 @@ class _Step:
         if not intent and clarify and not clarify.get("slots") and not self.payload.get("slot_writes") \
                 and "graph" not in self.payload:
             # a message, not a question about the current task ("I can't book a cab here"): say it, change nothing
-            if req.may_change:
+            if req.may_change and not speculative:
                 self.reply_text = str(clarify["text"])
             self.rule("PROP.reply", req_id=req.req_id)
             return
         goal = active_goal(self.tx)
         switch = bool(intent) and (goal is None or goal.intent != intent or bool(self.payload.get("new_goal")))
+        if switch and speculative and goal is not None:
+            # D17: half a sentence never abandons a task; the finished turn decides whether to switch
+            self.rule("PROP.speculative_no_switch", req_id=req.req_id)
+            return
         if switch and not (structure_ok and (goal is None or based >= (goal.origin_seq or 0))):
             # D14: a proposal older than the one that set the current goal (or than a goal switch) speaks about a
             # superseded framing of the task: none of it applies, not even to the current goal's slots.
@@ -789,7 +820,7 @@ class _Step:
         if goal is None:
             self.rule("PROP.no_goal", req_id=req.req_id)
             clarify = self.payload.get("clarify")
-            if clarify and req.may_change:  # nothing to attach a question to: say it (e.g. "I can't order food")
+            if clarify and req.may_change and not speculative:  # nothing to attach a question to: say it (e.g. "I can't order food")
                 self.reply_text = str(clarify["text"])
             return
         gid = goal.goal_id
@@ -811,9 +842,15 @@ class _Step:
             if name in guarded and tainted(value, non_user, user_text):
                 self.reject_tainted(gid, name, req.req_id)
                 continue
-            self.write_register(gid, name, value, based, "PLANNER", True)
+            # D17: a value planned from half a sentence is PARTIAL and unconfirmed until the finished turn is planned
+            self.write_register(gid, name, value, based, "PARTIAL" if speculative else "PLANNER", not speculative)
+        for (g, name), reg in self.tx.items("slots"):
+            if not speculative and g == gid and reg.source == "PARTIAL" and reg.writer_seq <= based:
+                # the plan of the finished turn saw this value and kept it: now it is the planner's, confirmed
+                self.tx.set("slots", (g, name), replace(reg, source="PLANNER", confirmed=True))
+                self.rule("SLOT.confirm", slot=name, by="final_plan")
         for (g, name), reg in self.tx.items("slots"):  # D12: a retraction the planner saw but did not fill
-            if g == gid and reg.value is None and reg.source == "T0" and reg.writer_seq <= based \
+            if not speculative and g == gid and reg.value is None and reg.source == "T0" and reg.writer_seq <= based \
                     and name not in written and reg.history and reg.history[-1][0] is not None:
                 previous = reg.history[-1][0]
                 self.tx.set("slots", (g, name), Register(previous, based, "PLANNER", True,
@@ -825,6 +862,10 @@ class _Step:
             self.tx.set("goals", gid, replace(self.tx.get("goals", gid), graph=nodes, graph_seq=based))
             self.rule("PLAN.graph", goal_id=gid, nodes=[n.node_id for n in nodes])
         clarify = self.payload.get("clarify")
+        if speculative:
+            self.rule("PROP.speculative", req_id=req.req_id, based_on_seq=based)  # questions wait for the turn's end
+            self.speculate()
+            return
         if clarify:
             asked = set(clarify.get("slots", ()))
             for pid, p in self.tx.items("pending"):  # the new question replaces older ones it fully covers
@@ -917,12 +958,17 @@ class _Step:
                     if guarded and tainted(b, *taint):
                         self.reject_tainted(gid, param, req_id)
                     else:
-                        self.write_register(gid, param, b, based, "PLANNER", True)
+                        req = self.tx.get("reqs", req_id)
+                        partial = req is not None and req.purpose == "speculate"
+                        self.write_register(gid, param, b, based, "PARTIAL" if partial else "PLANNER", not partial)
                 args.append((param, ("slot", name)))
                 self.rule("PLAN.rebind", param=param, slot=name)
         return Node(str(raw.get("node_id", f"n{i + 1}")), str(raw["tool"]), tuple(args), str(raw.get("instance_tag", "")))
 
     def planner_failed(self, req: Request) -> None:
+        if req.purpose == "speculate":
+            self.speculate()  # a partial sentence that plans to nothing is normal; say nothing
+            return
         newer = [r for _, r in self.tx.items("reqs") if r.based_on_seq > req.based_on_seq]
         if req.may_change and not newer and not req.handled:
             self.failure_note = True
@@ -1009,8 +1055,13 @@ class _Step:
         for d in ds:
             if d.error and d.error != "unknown_tool":
                 self.ensure_pending(goal.goal_id, "invalid_args", (), f"I need a valid value: {d.error}", d.node.node_id)
-        if self.turn_open() or self.meta("deadline_passed") or self.meta("session_ended"):
+        if self.meta("deadline_passed") or self.meta("session_ended"):
+            return
+        early = self.turn_open()
+        if early and not self.cfg.full_duplex:
             return  # D5: never dispatch while a user turn is open
+        if early and self.meta("hold"):
+            return  # D17: the user is correcting themselves; cancels happen now, the new search when they finish
         for d in ds:
             if d.key is None or any(c.relevance is Relevance.DESIRED for c in self.calls_for(goal.goal_id, d.key)):
                 continue
@@ -1024,8 +1075,8 @@ class _Step:
                 if len(failures) >= self.cfg.ro_max_attempts:
                     self.ensure_pending(goal.goal_id, "exhausted", (), f"{spec.name} is not responding.", d.key)
                     continue
-                self.dispatch(goal, d)  # D2: superseded twins with the same key don't matter
-            else:
+                self.dispatch(goal, d, early=early)  # D2: superseded twins with the same key don't matter
+            elif not early:  # D17: a state-changing call never starts before the user's turn ends
                 self.reconcile_state_changing(goal, d)
 
     def reconcile_state_changing(self, goal: Goal, d: Desired) -> None:
@@ -1168,12 +1219,20 @@ class _Step:
             self.emit(ActionKind.SPEAK, "SPEECH.ack", {"text": text, "act": "ack", "grounded_on": []})
             spoke = True
         turn = self.closed_turn
+        early = [c for _, c in self.tx.items("calls") if turn is not None and c.dispatched_seq >= turn.opened_seq
+                 and c.relevance is Relevance.DESIRED and c.outcome not in KNOWN_OUTCOMES] if self.cfg.full_duplex else []
         if turn is not None and not spoke:  # a closed user turn gets a grounded response, never a filler
             classes = set(turn.classes)
-            if TurnClass.STATUS_QUERY.value in classes:
+            if early:  # D17: work started while the user was still speaking
+                started = speech.working_on([(c.tool, json.loads(c.args_json)) for c in early])
+                text = "Already on it: " + started.removeprefix("On it: ")
+                self.emit(ActionKind.SPEAK, "SPEECH.early", {"text": text, "act": "ack", "grounded_on": []})
+                spoke = True
+            elif TurnClass.STATUS_QUERY.value in classes:
                 self.emit(ActionKind.SPEAK, "SPEECH.status",
                           {"text": self.status_text(goal), "act": "narration", "grounded_on": []})
-            elif TurnClass.GOAL_SWITCH.value in classes and goal is not None:
+            elif TurnClass.GOAL_SWITCH.value in classes and goal is not None \
+                    and (goal.origin_seq or 0) < turn.opened_seq:  # D17: not a task this same turn started
                 self.emit(ActionKind.SPEAK, "SPEECH.switch",
                           {"text": f"Okay, leaving {goal.intent} for now.", "act": "ack", "grounded_on": []})
             elif TurnClass.CORRECTION.value in classes and turn.t0_writes:
@@ -1193,6 +1252,8 @@ class _Step:
                 "act": "narration", "grounded_on": []})
         if goal is None or self.meta("deadline_passed") or self.meta("hold"):
             return
+        if self.cfg.full_duplex and any(r.open and r.may_change for _, r in self.tx.items("reqs")):
+            return  # D17: early results are answered only once the finished turn is planned
         done, grounded, ops = self.satisfied(goal)
         keys = tuple(d.key for d in resolve(self.tx, goal))
         if done and goal.final_keys != keys:

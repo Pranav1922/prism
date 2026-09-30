@@ -47,7 +47,7 @@ def wire_to_event(msg: dict) -> Event | Tick:
     if typ == "manifest":
         return Event(Kind.MANIFEST, t, {"tools": data["tools"]}, mid)
     if typ == "user.text":
-        return Event(Kind.USER_TEXT, t, {"text": data["text"]}, mid)
+        return Event(Kind.USER_TEXT, t, {"text": data["text"], **({"source": data["source"]} if "source" in data else {})}, mid)
     if typ == "user.audio":
         return Event(Kind.MEDIA, t, {"kind": "audio", "ref": data["ref"]}, mid)
     if typ == "user.frame":

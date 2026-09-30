@@ -3,7 +3,7 @@
 //   - the PRISM-LOCAL/0 wire messages plus the simulated tool world's ledger.
 // The browser keeps a MIRROR of the kernel's tables (it applies the journaled changes); it decides nothing.
 
-import { MAX_SECONDS, MIN_SECONDS, Recorder, SILENCE_PEAK, unsupportedReason } from "./recorder.js";
+import { MAX_SECONDS, MIN_SECONDS, Recorder, SILENCE_PEAK, TARGET_RATE, concat, downsample, pcm16, unsupportedReason } from "./recorder.js";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -22,7 +22,7 @@ function fresh(info = null, caps = null) {
     tables: { calls: {}, slots: {}, goals: {}, pending: {}, reqs: {}, ops: {}, frames: {}, meta: {}, timers: {} },
     seqT: {}, seqEvent: {},
     inputs: [], calls: {}, callOrder: [], percep: [], plans: {}, planOrder: [], classes: [], speech: [],
-    moments: [], cuts: [], steps: [], wire: [], sideEffects: [], cancelIgnored: {},
+    moments: [], cuts: [], steps: [], wire: [], sideEffects: [], cancelIgnored: {}, early: {}, specT: null,
     prevSlots: {}, dirty: true,
   };
 }
@@ -93,7 +93,7 @@ function onIn(r) {
         if (span) { span.t1 = t; span.text = p.text; }
         const audio = S.inputs.find((i) => i.kind === "audio" && i.heard == null && (!span || i.eid === span.eid));
         if (audio) { audio.heard = p.text; audio.heardSeq = r.seq; } else S.inputs.push({ t, kind: "heard", text: p.text, seq: r.seq });
-      } else S.inputs.push({ t, kind: "text", text: p.text, seq: r.seq });
+      } else S.inputs.push({ t, kind: p.source === "asr_stream" ? "heard" : "text", text: p.text, seq: r.seq, streamed: p.source === "asr_stream" });
       break;
     case "Media": S.inputs.push({ t, kind: p.kind === "image" ? "image" : "audio", ref: p.ref, eid: e.eid, seq: r.seq }); break;
     case "EndOfTurn": S.inputs.push({ t, kind: "eot", seq: r.seq }); break;
@@ -118,7 +118,7 @@ function onIn(r) {
     case "Proposal": case "ProposalFailed": {
       const pl = S.plans[p.req_id];
       if (pl && pl.t1 == null) { pl.t1 = t; pl.ok = e.kind === "Proposal"; pl.reason = p.reason; pl.payload = p; }
-      if (e.kind === "ProposalFailed" && (S.caps || META?.capabilities)?.planner.mode === "deterministic" && ["no_script", "no_plan"].includes(p.reason))
+      if (e.kind === "ProposalFailed" && !pl?.partial && (S.caps || META?.capabilities)?.planner.mode === "deterministic" && ["no_script", "no_plan"].includes(p.reason))
         addMoment(t, "plan", "No plan for that request",
           "Your words were heard and classified by the real fast path, but the deterministic planner (known examples, then rules for flight search, booking and weather) could not map them to a tool. Nothing was invented.");
       break;
@@ -165,8 +165,12 @@ function onStep(r) {
           `${describeCall(c)} was superseded${c?.t_cancel != null ? ` at ${fmtT(c.t_cancel)}` : ""}; its result arrived at ${fmtT(t)} and is recorded but never used.`);
         break;
       }
+      case "REC.dispatch":  // D17: started while the user was still speaking (read-only only)
+        if (x.early) { S.early[x.call_id] = t; addMoment(t, "plan", `Search started before you finished: ${x.call_id}`, "Full duplex: read-only work may start on the partial sentence; a later correction supersedes it."); }
+        break;
+      case "PROP.speculative": if (S.specT == null) S.specT = t; break;
       case "PLANNER.request":
-        if (!S.plans[x.req_id]) { S.plans[x.req_id] = { req: x.req_id, t0: t, based: x.based_on_seq }; S.planOrder.push(x.req_id); }
+        if (!S.plans[x.req_id]) { S.plans[x.req_id] = { req: x.req_id, t0: t, based: x.based_on_seq, partial: x.purpose === "speculate" }; S.planOrder.push(x.req_id); }
         break;
       case "PROP.invalid": addMoment(t, "safety", "Invalid plan rejected", (x.errors || []).join("; ")); break;
       case "PROP.injection_dropped":
@@ -371,6 +375,23 @@ function renderChain() {
     const state = t != null ? "done" : ended ? "absent" : "waiting";
     return `<li class="${state}" title="${esc(label + (t != null ? ` at ${fmtT(t)}` : "") + (note ? ` · ${note}` : ""))}"><b>${label}</b><span>${t != null ? fmtT(t) + (short && note ? " · " + esc(note) : "") : ended ? "not in this run" : "…"}</span></li>`;
   };
+  const earlyIds = S.callOrder.filter((id) => S.early[id] != null);
+  if (earlyIds.length) {  // D17: the full-duplex story, every stage read off a journaled event
+    const early = S.early[earlyIds[0]];
+    const more = first(S.inputs.filter((i) => i.kind !== "eot" && i.t > asked && (eot == null || i.t <= eot)).map((i) => i.t));
+    const fresh = changed != null ? first(S.callOrder.map((id) => S.calls[id]).filter((c) => c.t_call >= changed).map((c) => c.t_call)) : null;
+    box.innerHTML =
+      stage("Partial input", asked) +
+      stage("Understood so far", S.specT, "planned from the unfinished sentence") +
+      stage("More input", more) +
+      stage("Search started early", early, eot == null || early < eot ? "before end of turn" : "") +
+      stage("You changed it", changed) +
+      stage("Old work cancelled", cancelled, cancelled != null && changed != null ? (cancelled === changed ? "same step" : `+${(cancelled - changed).toFixed(2)} s`) : "") +
+      stage("Late result refused", stale) +
+      stage("New work", fresh) +
+      stage("Grounded answer", f?.t, f ? `on ${(f.grounded || []).join(", ") || "committed operation"}` : "");
+    return;
+  }
   box.innerHTML =
     stage("You asked", asked) +
     stage("First reply", spoke, spoke != null && eot != null && spoke >= eot ? `+${(spoke - eot).toFixed(2)} s` : "") +
@@ -397,6 +418,7 @@ function renderFacts() {
   const fact = (v, l, tip) => `<div class="fact" title="${esc(tip)}"><b>${v}</b> <span>${l}</span></div>`;
   box.innerHTML =
     fact(calls.length, "calls", "every tool.call the agent emitted") +
+    (Object.keys(S.early).length ? fact(Object.keys(S.early).length, "started early", "read-only calls started before the end of your turn (full duplex); state-changing calls never are") : "") +
     fact(superseded.length, "superseded", "calls the kernel marked no longer wanted (and cancelled if still running)") +
     fact(used, "in the answer", "the calls the final answer rests on") +
     fact(stale, "stale refused", "results that arrived for superseded calls: recorded, never used") +
@@ -502,11 +524,11 @@ function renderTimeline(now) {
   }));
   S.planOrder.forEach((id) => {
     const p = S.plans[id], end = p.t1 ?? now;
-    const lab = p.t1 == null ? "planning…" : p.ok ? `plan: ${words(p.payload?.intent || "no change")}` : `plan failed (${p.reason})`;
+    const lab = p.partial ? "partial" : p.t1 == null ? "planning…" : p.ok ? `plan: ${words(p.payload?.intent || "no change")}` : `plan failed (${p.reason})`;
     const fb = (p.detail?.fallback ? " (model failed → deterministic fallback)" : "") +
       (p.detail?.fixture ? `\ndeterministic planner: matched known request “${p.detail.fixture}” (similarity ${p.detail.similarity})` : "");
-    und.push({ key: id, cls: `item span plan ${p.t1 == null ? "open" : ""} ${p.ok === false ? "fail" : ""}`, style: `left:${x(p.t0)}px;width:${w(p.t0, end)}px;top:34px`,
-      html: esc(lab), title: `${id}: ${lab}${fb}` });
+    und.push({ key: id, cls: `item span plan ${p.t1 == null ? "open" : ""} ${p.ok === false && !p.partial ? "fail" : ""} ${p.partial ? "partial" : ""}`, style: `left:${x(p.t0)}px;width:${w(p.t0, end)}px;top:34px`,
+      html: esc(lab), title: `${id}: ${p.partial ? "plan of the unfinished sentence (D17: read-only work only; questions wait for the end of turn)" : lab}${fb}` });
   });
   reconcile(box("und"), und);
 
@@ -519,8 +541,10 @@ function renderTimeline(now) {
     const tip = `${c.id} ${c.tool} ${JSON.stringify(c.args)}\ncalled ${fmtT(c.t_call)}` + (c.t_cancel != null ? `\nsuperseded ${fmtT(c.t_cancel)} (${c.reason})` : "") +
       (S.cancelIgnored[c.id] != null ? "\nthe tool ignored the cancel and kept running" : "") +
       (c.t_result != null ? `\nresult ${fmtT(c.t_result)}${c.stale ? " — STALE: recorded, never used" : ""}` : "");
-    tools.push({ key: id, cls: `item call ${st}`, style: `left:${x(c.t_call)}px;width:${w(c.t_call, endActive)}px;top:${top}px`,
-      html: `<span class="cid">${c.id}</span><span class="label">${esc(title(c.tool) + " · " + argsShort(c.args))}</span>${st === "used" ? " ✓" : ""}`, title: tip });
+    const early = S.early[id] != null;
+    tools.push({ key: id, cls: `item call ${st}${early ? " early" : ""}`, style: `left:${x(c.t_call)}px;width:${w(c.t_call, endActive)}px;top:${top}px`,
+      html: `<span class="cid">${c.id}</span>${early ? `<span class="early-tag">early</span>` : ""}<span class="label">${esc(title(c.tool) + " · " + argsShort(c.args))}</span>${st === "used" ? " ✓" : ""}`,
+      title: tip + (early ? "\nstarted before the end of your turn (full duplex, read-only)" : "") });
     if (st === "superseded" && c.t_cancel != null && (c.t_result == null || c.t_result > c.t_cancel))
       tools.push({ key: `${id}-tail`, cls: "item ghost-tail", style: `left:${x(c.t_cancel)}px;width:${w(c.t_cancel, c.t_result ?? now)}px;top:${top}px`,
         title: "cancelled, but the (simulated) tool keeps running; its result will not be used" });
@@ -554,7 +578,8 @@ function renderTimeline(now) {
 // task & trust ---------------------------------------------------------------------------------------
 
 const SRC = { T0: ["heard", "fast understanding, in the same step"], PLANNER: ["understood", "from the planner, checked by the kernel"],
-  EVIDENCE: ["from image", "read from the image (OCR)"], USER: ["you confirmed", ""] };
+  EVIDENCE: ["from image", "read from the image (OCR)"],
+  PARTIAL: ["heard so far", "planned from the unfinished sentence; confirmed only when the whole turn is planned"], USER: ["you confirmed", ""] };
 
 function renderTask() {
   const g = activeGoal();
@@ -654,8 +679,16 @@ function renderTrust() {
 
 function renderConvo() {
   const items = [];
+  let streamed = null;  // one line per spoken turn: the words the streaming recogniser sent while you spoke
   for (const i of S.inputs) {
-    if (i.kind === "eot" || i.kind === "heard") continue;
+    if (i.kind === "eot") { streamed = null; continue; }
+    if (i.streamed) {
+      if (!streamed) { streamed = { t: i.t, words: [] }; items.push(streamed); }
+      streamed.words.push(i.text);
+      streamed.html = `<li class="user"><span class="t">${fmtT(streamed.t)}</span><div><div class="who">You · voice, streamed</div><div class="say">🎙 <span class="heard">heard “${esc(streamed.words.join(" "))}”</span></div></div></li>`;
+      continue;
+    }
+    if (i.kind === "heard") continue;
     let say = i.kind === "text" ? esc(i.text) : i.kind === "interrupt" ? "✋ (interrupt)" : "";
     if (i.kind === "audio") {
       const span = S.percep.find((p) => p.eid === i.eid && p.kind === "asr");
@@ -683,8 +716,11 @@ const RULES = {
   "ADM.stale": (x) => [`late result for <code>${x.call_id}</code>: recorded, never used`, "stale"],
   "ADM.outcome": (x) => [`<code>${x.call_id}</code> outcome ${x.frm} → ${x.to}`, ""],
   "ADM.ignored": (x) => [`result for <code>${x.call_id}</code> ignored (already ${x.current})`, "stale"],
-  "REC.dispatch": (x) => [`dispatch <code>${x.call_id}</code>${x.op ? " (operation " + x.op.join("/") + ")" : ""}`, ""],
-  "PLANNER.request": (x) => [`asked the planner <code>${x.req_id}</code> (sees input up to #${x.based_on_seq})`, ""],
+  "REC.dispatch": (x) => [`dispatch <code>${x.call_id}</code>${x.op ? " (operation " + x.op.join("/") + ")" : ""}${x.early ? " — early: before the end of your turn (read-only)" : ""}`, ""],
+  "PLANNER.request": (x) => [`asked the planner <code>${x.req_id}</code> (sees input up to #${x.based_on_seq})${x.purpose === "speculate" ? " — partial sentence" : ""}`, ""],
+  "PROP.speculative": (x) => [`partial plan <code>${x.req_id}</code> applied: values marked partial; no questions while you speak`, ""],
+  "PROP.speculative_no_switch": (x) => [`partial plan <code>${x.req_id}</code> would switch task: waits for the end of turn`, "safety"],
+  "PROP.speculative_late": (x) => [`partial plan <code>${x.req_id}</code> arrived after the turn ended: ignored`, "stale"],
   "PLANNER.skip": () => ["status-only turn: answered from state, planner not called", ""],
   "PLAN.graph": (x) => [`plan for ${x.goal_id}: ${x.nodes.join(", ")}`, ""],
   "PLAN.rev": (x) => [`desired work changed (revision ${x.plan_rev})`, ""],
@@ -693,7 +729,7 @@ const RULES = {
   "PROP.structure_stale": (x) => [`older plan <code>${x.req_id}</code>: structure ignored`, "stale"],
   "PROP.graph_stale": (x) => [`older plan <code>${x.req_id}</code>: graph not applied`, "stale"],
   "PROP.invalid": (x) => [`rejected invalid plan: ${esc((x.errors || []).join("; "))}`, "safety"],
-  "PROP.failed": (x) => [`planner failed (${x.reason})`, "safety"],
+  "PROP.failed": (x) => S.plans[x.req_id]?.partial ? [`partial sentence: nothing to plan yet (${x.reason})`, ""] : [`planner failed (${x.reason})`, "safety"],
   "PROP.tainted": (x) => [`refused tool-derived value for <code>${x.slot}</code>`, "safety"],
   "PROP.injection_dropped": (x) => [`dropped injected ${x.tool ? words(x.tool) : "write " + x.slot}`, "safety"],
   "BARRIER.block": (x) => [`held back ${(x.op || []).join("/")}: ${x.reason}`, "safety"],
@@ -717,7 +753,7 @@ function describeEvent(e) {
   if (!e) return "step";
   const p = e.payload || {};
   switch (e.kind) {
-    case "UserText": return p.source === "asr" ? `Heard “${esc(p.text)}”` : `You: “${esc(p.text)}”`;
+    case "UserText": return p.source === "asr" ? `Heard “${esc(p.text)}”` : p.source === "asr_stream" ? `Heard so far “${esc(p.text)}” (streaming)` : `You: “${esc(p.text)}”`;
     case "Media": return p.kind === "image" ? "Image received" : "Audio received";
     case "EndOfTurn": return "End of your turn";
     case "ToolResult": return `Result for <code>${p.call_id}</code> (${p.outcome})`;
@@ -916,10 +952,31 @@ async function init() {
     if (f) uploadAndSend("frame", f, f.type === "image/png" ? "png" : "jpg");
   });
 
-  // push-to-talk: hold the button, or hold M. Release -> 16 kHz WAV -> upload -> user.audio -> on-device recognition.
+  // push-to-talk: hold the button, or hold M. While held, 16 kHz PCM streams to the on-device recogniser every
+  // 250 ms and the words it is sure of reach the agent as the turn goes on (D17). Release -> the rest + end of turn.
+  // No streaming (or nothing recognised) -> the file path: 16 kHz WAV -> upload -> user.audio -> on-device recognition.
   const mic = $("#mic");
   const status = (text) => { $("#mic-status").textContent = text; };
-  let rec = null, busy = false, tick = null, autoStop = null;
+  let rec = null, busy = false, tick = null, autoStop = null, stream = null;
+  const openStream = (r) => {
+    if (!(S.caps || META?.capabilities)?.asr.stream) return null;
+    const st = { id: null, failed: false, blocks: [], flushed: 0 };
+    st.chain = api("/api/voice/start", {}).then((x) => { st.id = x.id; }).catch(() => { st.failed = true; });
+    st.flush = () => {
+      if (!st.blocks.length || st.failed) return st.chain;
+      const pcm = pcm16(downsample(concat(st.blocks.splice(0)), r.rate, TARGET_RATE));
+      st.chain = st.chain.then(() => st.id && !st.failed && api(`/api/voice/chunk?id=${st.id}`, pcm, true)).catch(() => { st.failed = true; });
+      return st.chain;
+    };
+    st.timer = setInterval(st.flush, 250);
+    return st;
+  };
+  const closeStream = async (st, cancel) => {
+    clearInterval(st.timer);
+    await st.flush();
+    if (st.failed || !st.id) return null;
+    try { return await api(`/api/voice/end?id=${st.id}${cancel ? "&cancel=1" : ""}`, {}); } catch { return null; }
+  };
   const level = (v) => ($("#mic-level").style.transform = `scale(${1 + v * 0.5})`);
   const micBlocked = () => unsupportedReason(window) ||
     ((S.caps || META?.capabilities)?.asr.real ? null : "speech recognition is not available on this machine (the prepared clips still work, with scripted transcripts)");
@@ -928,9 +985,10 @@ async function init() {
     if (S.info?.mode === "guided") { toast("A guided demo is running: its inputs come from the scenario file. Click “Go live” to talk.", true); return; }
     const blocked = micBlocked();
     if (blocked) { toast(`Microphone unavailable: ${blocked}.`); return; }
-    rec = new Recorder(level);
+    rec = new Recorder(level, (block) => stream?.blocks.push(block));
     let started;
     try { started = rec.start(); } catch (e) { rec = null; toast(`Microphone unavailable: ${e.message}`); return; }  // inside the gesture
+    stream = openStream(rec);
     mic.classList.add("recording");
     const t0 = performance.now();
     status("● recording… release to send");
@@ -940,11 +998,17 @@ async function init() {
   };
   const up = async () => {
     if (!rec) return;
-    const r = rec; rec = null;
+    const r = rec, st = stream; rec = null; stream = null;
     clearInterval(tick); clearTimeout(autoStop);
     mic.classList.remove("recording"); busy = true; mic.classList.add("busy"); status("");
     const res = await r.stop();
+    const unusable = res.error || res.seconds < MIN_SECONDS || res.peak < SILENCE_PEAK;
+    const streamed = st ? await closeStream(st, unusable) : null;
     busy = false; mic.classList.remove("busy");
+    if (streamed?.streamed) {  // the words already reached the agent while you spoke; the turn is closed
+      if (streamed.revised) toast("The recogniser revised a word after it was sent; the agent works from what was sent.", true);
+      return;
+    }
     if (res.error) {
       const n = res.error.name;
       toast(n === "NotAllowedError" || n === "SecurityError" ? "Microphone permission was denied. Allow it in the browser, or use the prepared clips (♪ Clips)."

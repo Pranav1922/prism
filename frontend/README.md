@@ -24,7 +24,7 @@ browser ──HTTP/SSE──► frontend/server.py ──► frontend/live.py (L
                                                 └─► evaluation/world.py (simulated tools)
 ```
 
-- **Wire.** The agent is started exactly as in the black-box evaluation: a separate process speaking PRISM-LOCAL/0 (this project's local protocol, not Samsung's). The server delivers inputs and tool results and ticks the clock when the agent asks for it. Virtual time = seconds since the session started.
+- **Wire.** The agent is started as in the black-box evaluation (a separate process speaking PRISM-LOCAL/0, this project's local protocol, not Samsung's), plus `--full-duplex` (D17): read-only work may start before the end of your turn. The server delivers inputs and tool results and ticks the clock when the agent asks for it. Virtual time = seconds since the session started.
 - **Events.** The browser receives three streams over Server-Sent Events:
   1. every wire message;
   2. the tool world's own ledger (calls received, cancels ignored or honoured, results, side effects);
@@ -37,7 +37,7 @@ browser ──HTTP/SSE──► frontend/server.py ──► frontend/live.py (L
 | Area | Shows | Source |
 |---|---|---|
 | **Now** (top) | the single most important thing happening: listening, working (with elapsed time and parallel calls), change of plan, waiting for you, answer | derived from the mirrored state |
-| **What happened, in order** (ribbon) | the seven-stage causal chain: you asked → first reply → work started → you changed it → old work cancelled → stale result refused → grounded answer. Each stage lights up with its real time, only when its event is in the journal. Stages that did not occur are marked "not in this run". A call superseded after it had already finished counts as *replaced*, not *cancelled*. | journal |
+| **What happened, in order** (ribbon) | when a call started before the end of your turn, the nine-stage full-duplex chain: partial input → understood so far → more input → search started early → you changed it → old work cancelled → late result refused → new work → grounded answer. Otherwise, the seven-stage causal chain: you asked → first reply → work started → you changed it → old work cancelled → stale result refused → grounded answer. Each stage lights up with its real time, only when its event is in the journal. Stages that did not occur are marked "not in this run". A call superseded after it had already finished counts as *replaced*, not *cancelled*. | journal |
 | **Key moments** | interruptions, stale results, safety decisions (injection dropped, confirmation required, no second booking), evidence applied, grounded answers, the evaluator verdict | kernel rules in the journal |
 | **Timeline** | lanes for You, Perception (speech/image), Understanding (fast-path class, planner spans), Tools (one bar per call), and Agent (what it said), all on one clock | journal + wire |
 | **Current task** | the agent's current understanding: each value and where it came from (heard / understood / from image), whether it is confirmed, what it replaced, open questions, paused tasks | slot registers, goals, pending |
@@ -54,6 +54,8 @@ browser ──HTTP/SSE──► frontend/server.py ──► frontend/live.py (L
 | amber hatched | cancelled or superseded; a dashed tail means the tool ignored the cancel and kept running |
 | red marker | a late result, recorded and never used |
 | amber marker | a side effect that completed despite the cancel (recorded as done, never repeated) |
+| EARLY tag | a read-only call that started before the end of your turn (full duplex) |
+| italic "partial" span | a plan of the unfinished sentence (its values are marked partial; no questions while you speak) |
 | teal | perception |
 | violet | planning |
 | ✂ dashed line | the moment your correction arrived |
@@ -65,7 +67,7 @@ Every state also has a text label.
 | Input | How | Reaches the agent as |
 |---|---|---|
 | typed request or correction | the text box, or a suggested-request chip | `user.text` + `user.turn_end` |
-| voice | **hold** the mic button, or hold **M** (max 15 s) | 16 kHz mono PCM WAV → `user.audio` + `user.turn_end` → on-device speech recognition |
+| voice | **hold** the mic button, or hold **M** (max 15 s) | streamed: 16 kHz PCM every 250 ms → on-device streaming recognition → stable words as `user.text` chunks while you speak, the rest + `user.turn_end` on release. Fallback (no streaming, or nothing heard): 16 kHz WAV → `user.audio` + `user.turn_end` → on-device recognition |
 | prepared voice clips | ♪ Clips (plays the clip in the room and sends the same audio) | `user.audio` |
 | image | ▣ Image: the boarding-pass sample, an upload, or drag and drop a PNG/JPEG anywhere | `user.frame` → tesseract OCR |
 | speak replies aloud | 🔈 Voice (browser speech synthesis) | none; output only |
@@ -84,17 +86,23 @@ Keyboard: `/` focuses the text box; hold `M` to talk.
    - the Delhi result arriving later and landing on the red "stale · ignored" marker;
    - the answer grounded on Mumbai only;
    - the evaluator PASS in "Why this answer".
-2. **Guided demos → "A boarding pass fills in the date".** The OCR evidence arrives before the task exists and is applied when the task is created. The task card shows "from image".
-3. **Guided demos → "Booking race".** The tool ignores the cancel and the booking completes. The agent records it, never books twice, and asks instead of claiming the two-passenger booking.
-4. **Guided demos → "Prompt injection in a tool result"** (2× playback). The injected booking is dropped, and nothing enters the task.
-5. **Go live.** Click "Find flights from Bangalore to Delhi on Friday". While the bar is blue, click "Actually, to Mumbai", or hold the mic and say it. Switch to **System** to show the decision feed and the kernel tables.
+2. **Guided demos → "Early retrieval before end of turn".** The request arrives in three pieces. Point out, in order:
+   - the Delhi search starting (EARLY tag) before the end of turn;
+   - "Actually, Mumbai" cancelling it in the same step;
+   - the Mumbai search;
+   - the late Delhi result refused;
+   - the nine-stage ribbon, where every stage is read off the journal.
+3. **Guided demos → "A boarding pass fills in the date".** The OCR evidence arrives before the task exists and is applied when the task is created. The task card shows "from image".
+4. **Guided demos → "Booking race".** The tool ignores the cancel and the booking completes. The agent records it, never books twice, and asks instead of claiming the two-passenger booking.
+5. **Guided demos → "Prompt injection in a tool result"** (2× playback). The injected booking is dropped, and nothing enters the task.
+6. **Go live.** Click "Find flights from Bangalore to Delhi on Friday". While the bar is blue, click "Actually, to Mumbai", or hold the mic and say it. By voice, the search starts while you are still speaking (after "on Friday"), and "Wait" cancels it before you finish the sentence. Switch to **System** to show the decision feed and the kernel tables.
 
 ## Real vs simulated vs fallback
 
 | Part | Status |
 |---|---|
 | agent kernel, fast understanding, safety rules, protocol, journal | **real**: the same code the tests and evaluator run |
-| speech recognition | **real**: Apple on-device recognition (macOS, after `./scripts/build_asr.sh`). Fallback: scripted transcripts for the demo clips (the Speech chip says which) |
+| speech recognition | **real**: Apple on-device recognition (macOS, after `./scripts/build_asr.sh`). The mic streams (`prism_asr --stream`, Apple partial results): genuine incremental recognition. Clips and guided demos use whole-file recognition. Fallback: scripted transcripts for the demo clips (the Speech chip says which) |
 | image understanding | **real**: tesseract OCR, extracting weekday, FROM/TO airport codes and flight numbers. Other images yield "nothing readable" |
 | planner | **deterministic** by default, in two stages. (1) The request is matched against known examples, tolerating recognition noise. (2) Otherwise, a rule planner handles common paraphrases of the supported tasks: flight search, booking and weather. Tools come from the manifest; values come from the schema, with a small city→airport table; missing values are asked for, never invented. A request that maps to no tool is reported honestly ("No plan for that request"). With `PRISM_PLANNER=ollama:qwen2.5:7b` and a running Ollama, a model plans, with the deterministic planner as per-request fallback |
 | tools (flights, booking, weather) | **simulated**: the evaluator's mock tool world with scripted latencies |
@@ -103,7 +111,9 @@ Keyboard: `/` focuses the text box; hold `M` to talk.
 
 ## Microphone: what is validated
 
-The path is: hold → capture (Web Audio, 16 kHz mono PCM WAV) → release → upload (content-checked: RIFF/PCM header, 0.3–60 s) → `user.audio` + `user.turn_end` → on-device recognition → transcript → fast understanding → kernel.
+Streamed path (default where streaming recognition is available): hold → capture (Web Audio) → every 250 ms, 16 kHz PCM → `/api/voice/chunk` → `prism_asr --stream` → stable words → `user.text` chunks of the open turn → fast understanding, partial planning, early read-only work → release → the rest of the transcript + `user.turn_end`.
+
+File path (fallback, and when streaming heard nothing): hold → capture (Web Audio, 16 kHz mono PCM WAV) → release → upload (content-checked: RIFF/PCM header, 0.3–60 s) → `user.audio` + `user.turn_end` → on-device recognition → transcript → fast understanding → kernel.
 
 | Part | How it is checked |
 |---|---|
@@ -112,6 +122,8 @@ The path is: hold → capture (Web Audio, 16 kHz mono PCM WAV) → release → u
 | upload content validation | `tests/test_microphone.py` |
 | live session: recording → transcript → the turn closes on the transcript or the end of turn (never the 1 s timer) → plan → tool call; silence → "Sorry, I didn't catch that" | `tests/test_microphone.py` (macOS) |
 | the real browser path: real user gesture, the page's recorder, upload, server, recognition, UI transition, and a **spoken interruption cancelling the running search** | run in Chrome with only the microphone *hardware* replaced by a stream playing the demo clips |
+| streaming: stable-word rule, PCM encoding, the endpoints' refusals, and a live session where the search starts **before release** | `tests/test_microphone.py`, `tests/test_frontend.py` (macOS for the live part) |
+| streaming in the real browser: words reached the agent from 1.3 s; the search was dispatched 0.4 s before release; a second hold ("Wait, Mumbai instead") cancelled it on "Wait", while still speaking | Chrome, microphone hardware replaced by the demo clips (this pass) |
 
 Physical microphone hardware was not exercised by automated checks. A real hardware recording from an earlier session ("Hello hello hello", 2 s, 16 kHz) is present in `demo/uploads/` and is recognised correctly.
 
@@ -133,7 +145,8 @@ Failures are reported, never hidden:
 
 - **One session at a time** (single presenter). Starting a new one replaces the current one.
 - **Planning is deterministic** on this machine (see `docs/PHASE5_MODEL_EVALUATION.md`), so free-form requests outside the known examples do not plan. Fast understanding still reacts to them: corrections still cancel work at once.
-- **Voice is push-to-talk.** Recognition runs when you release (it is not streaming). A spoken interruption therefore lands after recognition (about 0.2–0.9 s), not mid-utterance.
+- **Voice is push-to-talk, streamed.** While you hold the button, recognised words reach the agent as you speak. A word is sent once two recogniser hypotheses agree on it, or after a 0.6 s pause. A sent word cannot be taken back: if the final transcript revises one, a notice says so. Prepared clips are recognised whole, after they arrive.
+- **Full duplex.** Only read-only calls start early, and only once the words so far give all their required values ("Find a flight from Bangalore to Delhi" waits for "on Friday": the date is required). While you are correcting yourself ("Actually, …"), running work is cancelled at once, and the new search starts when you finish. A half sentence never switches task and never asks a question.
 - **Booking follow-ups.** When the agent has asked for the flight and passenger count, the next reply is read against that booking. Flight numbers are recognised from known airline names and codes: "IndiGo 6E 431", "IndiGo SE 2020" (the name wins over a misheard code), "AI 2020", "6E 431", and a typed "6E-431". A number counts as passengers only with context ("2 passengers", "for two people", "3 travellers"), or when only the count is being asked for. A reply that provides nothing gets an honest, specific re-ask, and a repeat is never worded identically. A flight number without an airline is not guessed.
 - **Unsupported tasks.** A request for an action no tool offers ("Book a cab from …", "book a car to Hyderabad") gets an explicit reply: "Sorry, I can't book a cab: there is no tool for that here. I can: search flights, book flight, get weather. Nothing was changed." The list comes from the tool manifest. Nothing is dispatched, and the current or completed task is not reopened or modified. A booking verb alone never selects the flight-booking tool; that also needs "flight", a flight number, or a reference to current results.
 - **Deterministic planner scope.** It covers the demo domain (flight search, booking, weather; about 20 cities in its airport table). Anything else, such as relative dates ("tomorrow") or cities outside the table, is asked about or not planned. It is never guessed.
@@ -144,8 +157,9 @@ Failures are reported, never hidden:
 
 ## Tests
 
-`tests/test_frontend.py` checks four things:
+`tests/test_frontend.py` checks five things (streaming voice is also tested in `tests/test_microphone.py`, and full duplex in `tests/test_full_duplex.py`):
 - every guided demo, run through the live driver, passes the unchanged evaluator;
 - the kernel's journal is streamed;
 - live input reaches the agent and comes back over SSE;
-- bad input is refused.
+- bad input is refused;
+- the streaming voice endpoints refuse what they should.

@@ -34,7 +34,9 @@ HARNESS_INPUT = {
     "manifest": {"type": "object", "required": ["tools"], "additionalProperties": False,
                  "properties": {"tools": {"type": "array", "items": {"type": "object"}}}},
     "user.text": {"type": "object", "required": ["text"], "additionalProperties": False,
-                  "properties": {"text": {"type": "string", "minLength": 1}}},
+                  "properties": {"text": {"type": "string", "minLength": 1},
+                                 # D17 (optional): the chunk came from streaming on-device recognition, not typing
+                                 "source": {"enum": ["asr_stream"]}}},
     "user.turn_end": _EMPTY,
     "user.audio": {"type": "object", "required": ["ref"], "additionalProperties": False,
                    "properties": {"ref": _ID, "duration_s": {"type": "number", "minimum": 0}}},

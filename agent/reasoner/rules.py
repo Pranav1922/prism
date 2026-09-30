@@ -95,6 +95,9 @@ def _place(text: str, start: int) -> tuple[str | None, str | None]:
     return None, one
 
 
+CORRECTION_CUE = r"\b(?:actually|instead|rather|no|sorry|wait|make it)[,.!]?\s+"
+
+
 def _role(name: str) -> str | None:
     n = name.lower()
     if any(k in n for k in ("origin", "from", "source", "depart")):
@@ -112,11 +115,16 @@ def extract(text: str, schema: dict) -> dict[str, Any]:
     in_fid = {i for _, idx in fids for i in idx}
     out: dict[str, Any] = {}
     places: dict[str, str] = {}
-    # "from X", "to X"; and "X to Y" without "from"
-    for hit in re.finditer(r"\b(from|to|into|towards)\s+", text, re.I):
-        code, _ = _place(text, hit.end())
+    # "from X", "to X"; and "X to Y" without "from". The last mention wins: "to Delhi ... actually to Mumbai" is Mumbai,
+    # and a bare city right after a correction cue ("actually, Mumbai", "wait, Mumbai instead") is the destination.
+    mentions = [(hit.start(), "from" if hit.group(1).lower() == "from" else "to", hit.end())
+                for hit in re.finditer(r"\b(from|to|into|towards)\s+", text, re.I)]
+    mentions += [(hit.start(), "to", hit.end()) for hit in re.finditer(CORRECTION_CUE, text, re.I)
+                 if not re.match(r"(from|to|into|towards)\b", text[hit.end():], re.I)]
+    for _, which, end in sorted(mentions):
+        code, _ = _place(text, end)
         if code:
-            places.setdefault("from" if hit.group(1).lower() == "from" else "to", code)
+            places[which] = code
     if "from" not in places:
         pair = re.search(r"\b([A-Za-z]+(?:\s[A-Za-z]+)?)\s+to\s+", text)
         if pair:
@@ -369,7 +377,10 @@ class DeterministicPlanner:
     records: list[dict] = field(default_factory=list)
 
     def respond(self, request: dict, now: float) -> tuple[float, Event]:
-        key, _ = self.known.match(request["view"]["turn_text"])
+        # D17: a known example is matched noise-tolerantly, so half a sentence could borrow the rest of an example
+        # ("... to Delhi on" -> "... on Friday"). Partial text is planned by the rules only: what it says, nothing more.
+        partial = bool(request["view"].get("partial"))
+        key, _ = (None, None) if partial else self.known.match(request["view"]["turn_text"])
         chosen = self.known if key is not None else self.rules
         t, event = chosen.respond(request, now)
         self.records.append(dict(chosen.records[-1]))

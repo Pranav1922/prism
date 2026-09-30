@@ -241,3 +241,77 @@ def test_a_microphone_that_never_starts_or_stays_blocked_fails_cleanly_instead_o
     """)
     assert r["hung"] == "StartTimeout" and 2900 <= r["waited"] < 6000
     assert r["blocked"] == "Suspended" and r["released"] == 1 and r["wav"] is False  # the microphone is released
+
+
+# ---------------------------------------------------------------- streaming voice (D17)
+
+
+def test_stable_words_never_send_a_word_that_may_still_change():
+    from frontend.voice_stream import StableWords
+    w = StableWords()
+    assert w.update("Find") is None  # heard once: may still change
+    assert w.update("Find a") == "Find"  # agreed by two hypotheses, and not the last word
+    assert w.update("Find a flight from Ben") == "a"  # "a" is now agreed; "flight from Ben" was heard only once
+    assert w.update("Find a flight from Bangalore") == "flight from"  # "Ben" -> "Bangalore": the half word never went out
+    assert w.settle() == "Bangalore"  # the speaker paused: the unchanged hypothesis is sent in full
+    assert w.update("Fine a flight") is None  # the recogniser revises a sent word: nothing new is sent meanwhile
+    assert w.finish("Find a flight from Bangalore to Delhi") == ("to Delhi", False)
+    v = StableWords()
+    v.update("Find a"), v.update("Find a flight")
+    assert v.finish("Fine a flight to Goa") == ("flight to Goa", True)  # reported as revised, never hidden
+
+
+@needs_node
+def test_streamed_pcm_is_16_bit_little_endian_and_clipped(tmp_path):
+    r = run_node(tmp_path, """
+        const b = new DataView(R.pcm16(new Float32Array([0, 0.5, -0.5, 1.5, -1.5])));
+        console.log(JSON.stringify({n: b.byteLength, s: [0, 1, 2, 3, 4].map((i) => b.getInt16(2 * i, true))}));
+    """)
+    assert r == {"n": 10, "s": [0, 16383, -16384, 32767, -32768]}
+
+
+def test_partial_text_never_borrows_the_rest_of_a_known_example():
+    from agent.reasoner.rules import DeterministicPlanner, RulePlanner
+    fixtures = json.loads((ROOT / "agent" / "fixtures" / "scripted.json").read_text())
+    planner = DeterministicPlanner(ScriptedPlanner(fixtures["planner"], 0.25), RulePlanner(0.25))
+    view = {"turn_text": "Find a flight from Bangalore to Delhi on", "turn_classes": ["REQUEST"], "turn_attributed": [],
+            "utterances": [], "tools": [{"name": t["name"], "description": t.get("description", ""),
+                                          "effect": t.get("effect", "read_only"), "parameters": t["parameters"]}
+                                         for t in server.MANIFEST],
+            "goal": None, "slots": {}, "results": [], "evidence": [], "pending": [], "suspended_goals": []}
+    whole = planner.respond({"req_id": "r1", "based_on_seq": 1, "view": view}, 0.0)[1].payload
+    assert whole["slot_writes"].get("date") == "Fri"  # a finished turn may match the known example (noise tolerance)
+    part = planner.respond({"req_id": "r2", "based_on_seq": 1, "view": {**view, "partial": True}}, 0.0)[1].payload
+    assert "date" not in part["slot_writes"]  # half a sentence: only what it says
+
+
+def pcm_of(tmp_path: Path, clip: str) -> bytes:
+    import wave
+    out = tmp_path / "clip.wav"
+    subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16@16000", "-c", "1", str(ROOT / clip), str(out)], check=True)
+    with wave.open(str(out)) as w:
+        return w.readframes(w.getnframes())
+
+
+@needs_asr
+def test_streamed_voice_starts_the_search_before_the_button_is_released(tmp_path):
+    from frontend.voice_stream import VoiceStream
+    events: list = []
+    s = LiveSession(events.append, server.agent_cmd(), server.MANIFEST, server.PRESETS["realistic"]["world"])
+    s.start()
+    try:
+        v = VoiceStream(s.inject, str(server.ASR_BIN))
+        audio = pcm_of(tmp_path, "demo/media/find_delhi.aiff") + b"\0" * 32000  # the speech, then 1 s held in silence
+        for i in range(0, len(audio), 8000):  # 250 ms blocks in real time, as the browser sends them
+            v.feed(audio[i:i + 8000])
+            time.sleep(0.25)
+        before_release = [e["msg"] for e in events if e["type"] == "wire" and (e["msg"] or {}).get("type") == "tool.call"]
+        out = v.end()
+    finally:
+        s.stop()
+        s.join(10)
+    assert out["streamed"] and "bangalore" in out["text"].lower() and len(out["chunks"]) >= 2
+    assert any(not c["after_release"] for c in out["chunks"])  # words reached the agent while the user was speaking
+    assert before_release and before_release[0]["data"]["args"] == {"origin": "BLR", "destination": "DEL", "date": "Fri"}
+    heard = [r["event"]["payload"] for r in journal(events, "in") if r["event"]["kind"] == "UserText"]
+    assert heard and all(h.get("source") == "asr_stream" for h in heard)

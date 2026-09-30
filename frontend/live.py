@@ -109,8 +109,8 @@ class LiveSession(threading.Thread):
                 # 2) live input from the person (not during a scripted scenario)
                 try:
                     typ, data, mid = self.inputs.get_nowait()
-                    t = max(self.now(), self.last_t)
-                    wake = self._send(agent, wire(mid or f"u{next(self._n)}", round(t, 4), typ, data), t, schedule)
+                    t = max(round(self.now(), 4), self.last_t)  # one t for the wire and the tool world (no drift)
+                    wake = self._send(agent, wire(mid or f"u{next(self._n)}", t, typ, data), t, schedule)
                     continue
                 except queue.Empty:
                     pass

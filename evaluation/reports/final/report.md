@@ -27,6 +27,7 @@
 | unattributed_correction_marker | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 | unknown_call_result | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
 | demo_audio_interruption | yes | 97.1 | 1.00 | 1.00 | 0.81 | 1.00 | 0.82 | - |
+| demo_early_retrieval | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.25 | - |
 | demo_ticket_image | yes | 95.3 | 1.00 | n/a | 0.80 | 1.00 | 0.85 | - |
 | booking_count_never_given | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
 | correction_before_first_plan | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.10 | - |
@@ -63,5 +64,5 @@
 | status_question_during_search | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | - |
 | two_slots_one_utterance | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 
-**58/58 scenarios pass all checks; mean internal score 99.8.**
+**59/59 scenarios pass all checks; mean internal score 99.8.**
 

@@ -264,6 +264,8 @@ body[data-view="story"] #system-panel, body[data-view="system"] #convo-panel { d
 .call.failed { background: var(--stale-soft); border: 1px solid var(--stale); color: #ffc9ce; }
 .call.unknown { background: var(--stale-soft); border: 1px dashed var(--stale); color: #ffc9ce; }
 .call.unknown .label::after { content: " · outcome unknown"; }
+.span.plan.partial { opacity: .65; font-style: italic; }
+.early-tag { font-size: 10px; letter-spacing: .04em; text-transform: uppercase; padding: 0 5px; margin-right: 6px; border-radius: 3px; background: rgba(125, 211, 252, .18); color: #bae6fd; border: 1px solid rgba(125, 211, 252, .5); }
 .ghost-tail { height: 28px; border: 1px dashed rgba(245,165,36,.45); border-left: 0; border-radius: 0 4px 4px 0; }
 .stale-hit {
   top: 5px; height: 36px; width: 2px; background: var(--stale); z-index: 3;

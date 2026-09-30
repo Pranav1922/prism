@@ -88,3 +88,19 @@ def test_bad_input_is_refused(base_url):
         urllib.request.urlopen(f"{base_url}/media/../pyproject.toml", timeout=10)
     post(f"{base_url}/api/session", {"mode": "guided", "scenario": server.GUIDED[0][0]})
     assert post(f"{base_url}/api/input", {"kind": "text", "text": "hi"})[0] == 409  # a guided run takes no live input
+
+
+def test_streaming_voice_endpoints_refuse_what_they_should(base_url):
+    post(f"{base_url}/api/session", {"mode": "guided", "scenario": server.GUIDED[0][0]})
+    status = post(f"{base_url}/api/voice/start", {})[0]
+    assert status in (409, 503)  # a guided demo takes no live voice (503: no streaming recogniser on this machine)
+    assert post(f"{base_url}/api/voice/chunk?id=999", raw=b"\0\0")[0] == 404
+    assert post(f"{base_url}/api/voice/end?id=999", {})[0] == 404
+    if not server.capabilities()["asr"].get("stream"):
+        return
+    post(f"{base_url}/api/session", {"mode": "live", "preset": "fast"})
+    code, started = post(f"{base_url}/api/voice/start", {})
+    assert code == 200
+    assert post(f"{base_url}/api/voice/chunk?id={started['id']}", raw=b"\0")[0] == 400  # odd length: not 16-bit PCM
+    code, ended = post(f"{base_url}/api/voice/end?id={started['id']}", {})
+    assert code == 200 and ended["streamed"] is False  # nothing heard: the browser falls back to the file path

@@ -190,8 +190,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--perception-latency", default="measured", help="measured | <virtual seconds>")
     ap.add_argument("--planner-latency", default="measured", help="measured | <virtual seconds> (model planners)")
     ap.add_argument("--planner-timeout", type=float, default=10.0)
+    ap.add_argument("--full-duplex", action="store_true",
+                    help="D17: plan partial turns and start read-only calls before the user's turn ends")
     args = ap.parse_args(argv)
-    agent = LocalAgent(json.loads(Path(args.fixtures).read_text()), understanding=args.understanding,
+    agent = LocalAgent(json.loads(Path(args.fixtures).read_text()), Config(full_duplex=args.full_duplex),
+                       understanding=args.understanding,
                        planner=args.planner, planner_latency=args.planner_latency, planner_timeout_s=args.planner_timeout,
                        perception=args.perception, perception_latency=args.perception_latency)
     for line in sys.stdin:

@@ -19,8 +19,9 @@ uv venv --python 3.12 .venv && uv pip install -e ".[dev]"   # setup (Python 3.10
 ./scripts/build_asr.sh                                      # macOS: on-device speech recognition helper
 .venv/bin/python -m frontend.server --open                  # the live console: http://127.0.0.1:8765
 .venv/bin/python demo/run_demo.py                           # the two demos in the terminal (add --speak to hear them)
-.venv/bin/python -m pytest                                  # 405 tests
-.venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 57 scenarios
+.venv/bin/python -m pytest                                  # 447 tests
+.venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 59 scenarios (impl_a_duplex: full duplex)
+.venv/bin/python scripts/bench_duplex.py                    # full-duplex measurements (virtual / wall / real ASR-OCR)
 docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + evaluation on Linux
 ```
 
@@ -28,10 +29,17 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
 - **Demo:** [`demo/README.md`](demo/README.md), with a reference run in [`demo/SAMPLE_OUTPUT.txt`](demo/SAMPLE_OUTPUT.txt).
 - **Submission status, requirement mapping and limitations:** [`docs/SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md).
 
-## Current status (final integration)
+## Current status (full-duplex pass)
 
-- **Black-box evaluation (INTERNAL):** 58/58 scenarios pass, mean internal score 99.8 ([report](evaluation/reports/final/report.md)).
-  - Suites: reference 12/12, adversarial 22/22, understanding 13/13, planner 9/9, demo 2/2.
+- **Full duplex (D17, opt-in; on in the console):**
+  - While the user is still speaking or typing in pieces, the partial turn is planned, and **read-only** calls start before the end of turn.
+  - A later chunk ("Actually, Mumbai") supersedes early work in the same step, and its late result is refused.
+  - State-changing calls never start before the turn ends.
+  - Spoken input streams too: the on-device recogniser's partial results reach the agent word by word while the button is held.
+  - See the architecture decision [D17](docs/ARCHITECTURE_REVIEW.md) and the audit in [`SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md).
+- **Black-box evaluation (INTERNAL):** 59/59 scenarios pass with the evaluator baseline (`impl_a`, full duplex off). The original 58 are score-identical to before; mean internal score 99.8 ([report](evaluation/reports/final/report.md)).
+  - Suites: reference 12/12, adversarial 22/22, understanding 13/13, planner 9/9, demo 3/3.
+  - With full duplex on (`impl_a_duplex`): 58/59. The exception, `result_exactly_at_timeout`, is timed for end-of-turn dispatch (see D17).
   - Interruption → cancel is 0.00 s (virtual; same kernel step), and 1.1 ms wall-clock while a planner call is running.
 - **Real input:**
   - audio via Apple on-device speech recognition (macOS) → fast understanding → kernel;
@@ -45,19 +53,20 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
   - no false completion.
 
   Each is checked on every kernel step by the invariant checker (INV-01…23 plus decisions D13/D14).
-- **Tests:** 405 pass on Python 3.10 and 3.12; ruff and mypy clean.
+- **Tests:** 447 pass on Python 3.10 and 3.12; ruff and mypy clean.
 
 ### Build history
 
 | Phase | Report |
 |---|---|
-| Architecture (locked), hostile review, decisions D1–D16 | [`ARCHITECTURE_REVIEW.md`](docs/ARCHITECTURE_REVIEW.md) |
+| Architecture (locked), hostile review, decisions D1–D17 | [`ARCHITECTURE_REVIEW.md`](docs/ARCHITECTURE_REVIEW.md) |
 | 1: Deterministic kernel, journal, replay | [`PHASE1_IMPLEMENTATION.md`](docs/PHASE1_IMPLEMENTATION.md) |
 | 2: Async runtime | [`PHASE2_RUNTIME.md`](docs/PHASE2_RUNTIME.md) |
 | 3: PRISM-LOCAL/0 adapter + black-box evaluation | [`PHASE3_PROTOCOL_ADAPTER.md`](docs/PHASE3_PROTOCOL_ADAPTER.md) |
 | 4: Fast understanding | [`PHASE4_FAST_UNDERSTANDING.md`](docs/PHASE4_FAST_UNDERSTANDING.md) |
 | 5: Planner / deep reasoning, model A/B | [`PHASE5_PLANNER.md`](docs/PHASE5_PLANNER.md), [`PHASE5_MODEL_EVALUATION.md`](docs/PHASE5_MODEL_EVALUATION.md) |
 | Final integration: audio, vision, response layer, demo, Docker | [`SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md) |
+| Full duplex: early read-only work, streaming speech (D17) | [`SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md) §Theme 05 audit |
 
 ### More commands
 
