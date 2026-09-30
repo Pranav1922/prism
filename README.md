@@ -19,7 +19,7 @@ uv venv --python 3.12 .venv && uv pip install -e ".[dev]"   # setup (Python 3.10
 ./scripts/build_asr.sh                                      # macOS: on-device speech recognition helper
 .venv/bin/python -m frontend.server --open                  # the live console: http://127.0.0.1:8765
 .venv/bin/python demo/run_demo.py                           # the two demos in the terminal (add --speak to hear them)
-.venv/bin/python -m pytest                                  # 341 tests
+.venv/bin/python -m pytest                                  # 373 tests
 .venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 57 scenarios
 docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + evaluation on Linux
 ```
@@ -30,14 +30,14 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
 
 ## Current status (final integration)
 
-- **Black-box evaluation (INTERNAL):** 57/57 scenarios pass, mean internal score 99.8 ([report](evaluation/reports/final/report.md)).
-  - Suites: reference 12/12, adversarial 22/22, understanding 13/13, planner 8/8, demo 2/2.
+- **Black-box evaluation (INTERNAL):** 58/58 scenarios pass, mean internal score 99.8 ([report](evaluation/reports/final/report.md)).
+  - Suites: reference 12/12, adversarial 22/22, understanding 13/13, planner 9/9, demo 2/2.
   - Interruption → cancel is 0.00 s (virtual; same kernel step), and 1.1 ms wall-clock while a planner call is running.
 - **Real input:**
   - audio via Apple on-device speech recognition (macOS) → fast understanding → kernel;
   - images via tesseract OCR → grounded evidence → the right goal.
   - Scripted fallbacks are used elsewhere, for example in Docker.
-- **Planner policy:** `--planner auto` uses the model named by `PRISM_PLANNER` if its server is reachable, with a per-request deterministic fallback; otherwise it uses the deterministic scripted planner. Three local models were measured ([evidence](docs/PHASE5_MODEL_EVALUATION.md)): none is both reliable and fast enough on this machine, so the demo uses the deterministic planner.
+- **Planner policy:** `--planner auto` uses the model named by `PRISM_PLANNER` if its server is reachable, with a per-request deterministic fallback. Otherwise it uses the deterministic planner: known examples, then rules for common paraphrases of the supported tasks. Three local models were measured ([evidence](docs/PHASE5_MODEL_EVALUATION.md)): none is both reliable and fast enough on this machine, so the demo uses the deterministic planner.
 - **Safety:**
   - no duplicate side effects;
   - no state-changing call the user did not ask for or whose values the user never said;
@@ -45,7 +45,7 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
   - no false completion.
 
   Each is checked on every kernel step by the invariant checker (INV-01…23 plus decisions D13/D14).
-- **Tests:** 341 pass on Python 3.10 and 3.12; ruff and mypy clean.
+- **Tests:** 373 pass on Python 3.10 and 3.12; ruff and mypy clean.
 
 ### Build history
 

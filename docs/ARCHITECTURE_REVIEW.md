@@ -928,6 +928,7 @@ Separately, real OCR can finish before the planner has created the goal. The evi
 
 **Decision.**
 - **End of turn.** An end of turn that arrives while audio of that turn is still being transcribed is remembered (`TURN.await_transcript`). The turn closes in the step that receives the last pending transcript. If recognition fails, the agent says it did not understand.
+  - The reverse order is also covered. When recognition fails *before* the end of turn arrives (typical in live use, where recognition finishes while the user is still releasing the button), the failure is remembered (`asr_missed`). The end of turn then reports it (`TURN.not_heard`: "Sorry, I didn't catch that.") instead of being dropped silently.
 - **Early evidence.** When a goal is created, frames waiting for a goal are attached to it and their claims are applied then, with the usual last-writer-wins and conflict rules. The frame's `seq` is the `writer_seq`.
 
 Both are implementations of F3/F5 as written.

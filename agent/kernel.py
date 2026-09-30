@@ -77,6 +77,7 @@ def _meta_defaults() -> dict:
         "last_speech_seq": 0,  # step of the last speech act (the ack timer stays silent if anything was said)
         "asr_pending": (),  # D16: perception req ids of audio still being transcribed
         "asr_eot": False,  # D16: the user's end of turn arrived before its transcript
+        "asr_missed": False,  # D16: recognition failed before the user's end of turn arrived
         "authorised": (),  # D13: ((goal_id, canonical [tool, args]), ...) operations the user explicitly confirmed
     }
 
@@ -319,6 +320,7 @@ class _Step:
         self.closed_turn: Turn | None = None  # the user turn this step closed (drives turn-close responses)
         self.failure_note = False  # the newest planner request failed: say so instead of going silent
         self.reply_text: str | None = None  # a planner question with no goal to attach it to
+        self.not_heard = False  # speech recognition returned nothing for the user's turn
         self.progress_ack = False  # the ack timer found the user waiting in silence on a slow plan
 
     # ------------------------------------------------------------ small helpers
@@ -634,6 +636,8 @@ class _Step:
         self.rule("T0.classify", cls=u.cls.value, cues=list(u.cues), attributed=list(u.attributed),
                   writes=sorted(u.writes))
         self.arm("eot", "eot_silence", self.now + self.cfg.silence_s)
+        if self.meta("asr_missed"):
+            self.set_meta("asr_missed", False)  # the user said something after all
         if self.payload.get("source") == "asr":
             self.set_meta("asr_pending", self.meta("asr_pending")[1:])
             if self.meta("asr_eot") and not self.meta("asr_pending"):  # D16: the turn already ended
@@ -644,6 +648,11 @@ class _Step:
         if not self.turn_open() and self.meta("asr_pending"):
             self.set_meta("asr_eot", True)  # D16: close when the transcript arrives
             self.rule("TURN.await_transcript")
+            return
+        if not self.turn_open() and self.meta("asr_missed"):  # D16: recognition already failed for this turn
+            self.set_meta("asr_missed", False)
+            self.rule("TURN.not_heard")
+            self.not_heard = True
             return
         self.close_turn(inferred=False)
 
@@ -933,7 +942,9 @@ class _Step:
             self.set_meta("asr_pending", pending)
             if not pending and self.meta("asr_eot"):
                 self.set_meta("asr_eot", False)
-                self.failure_note = True  # nothing was understood: say so
+                self.not_heard = True  # the speech was not recognised: say so (not a planning failure)
+            elif not pending and not self.turn_open():
+                self.set_meta("asr_missed", True)  # the user's end of turn is still to come: report it then
 
     def on_evidence(self) -> None:
         fid = self.payload.get("frame_eid")
@@ -1160,6 +1171,8 @@ class _Step:
         if self.reply_text and not spoke and not self.turn_open():
             self.emit(ActionKind.SPEAK, "SPEECH.planner_reply", {"text": self.reply_text, "act": "narration",
                                                                  "grounded_on": []})
+        elif self.not_heard and not spoke:
+            self.emit(ActionKind.SPEAK, "SPEECH.not_heard", {"text": speech.not_heard(), "act": "narration", "grounded_on": []})
         elif self.failure_note and not spoke:
             self.emit(ActionKind.SPEAK, "SPEECH.planner_failed", {
                 "text": "Sorry, I couldn't work out how to do that. Could you say it another way?",

@@ -81,7 +81,7 @@ GUIDED = [
      "'Find flights from Bangalore to Delhi' with no date; the answer comes later.",
      ["The agent asks for the date instead of inventing one.", "It searches once the date is given."]),
     ("reference/F_evidence_after_correction", "Image evidence vs what you said", "text + image",
-     "The photo says Friday, but you said Saturday.",
+     "Flights 'on the date in this photo'; while the photo is still being read, you say 'the date is Saturday'. The photo turns out to say Friday.",
      ["The image does not silently overwrite you: the conflict is asked about."]),
 ]
 
@@ -100,6 +100,47 @@ CLIPS = [
     {"ref": "demo/media/ticket_request.aiff", "label": "“Find flights … on the date on this ticket.”"},
 ]
 IMAGES = [{"ref": "demo/media/ticket.png", "label": "Boarding pass (BLR → DEL, Saturday)"}]
+
+
+def check_upload(ext: str, body: bytes) -> str | None:
+    """Content check, not just the extension: what reaches the recogniser / OCR must be what it claims to be."""
+    if ext == "wav":
+        info = wav_info(body)
+        if info is None:
+            return "not a PCM WAV file (the microphone recorder sends 16-bit PCM WAV)"
+        seconds = info["frames"] / info["rate"]
+        if seconds < 0.3:
+            return "recording too short"
+        if seconds > 60:
+            return "recording too long (push-to-talk is for short requests)"
+        return None
+    if ext == "png" and body.startswith(b"\x89PNG\r\n\x1a\n"):
+        return None
+    if ext in ("jpg", "jpeg") and body.startswith(b"\xff\xd8\xff"):
+        return None
+    return "unsupported upload (WAV audio, PNG or JPEG images only)"
+
+
+def wav_info(body: bytes) -> dict | None:
+    """Parse a RIFF/WAVE header: PCM, 16-bit, 1-2 channels, 8-48 kHz. None if it is anything else."""
+    import struct
+    if len(body) < 44 or body[:4] != b"RIFF" or body[8:12] != b"WAVE":
+        return None
+    pos, fmt, data_len = 12, None, None
+    while pos + 8 <= len(body):
+        cid, size = body[pos:pos + 4], struct.unpack("<I", body[pos + 4:pos + 8])[0]
+        if cid == b"fmt " and size >= 16:
+            fmt = struct.unpack("<HHIIHH", body[pos + 8:pos + 24])
+        elif cid == b"data":
+            data_len = min(size, len(body) - pos - 8)
+            break
+        pos += 8 + size + (size & 1)
+    if fmt is None or data_len is None:
+        return None
+    audio_format, channels, rate, _, block, bits = fmt
+    if audio_format != 1 or bits != 16 or channels not in (1, 2) or not 8000 <= rate <= 48000:
+        return None
+    return {"rate": rate, "channels": channels, "frames": data_len // block}
 
 
 def capabilities() -> dict:
@@ -295,10 +336,11 @@ class Handler(BaseHTTPRequestHandler):
 
     def _upload(self, query: dict, body: bytes) -> None:
         ext = (query.get("ext") or [""])[0].lower()
-        if ext not in ("wav", "png", "jpg", "jpeg", "aiff") or not body:
-            return self._json({"error": "unsupported upload"}, 400)
+        problem = check_upload(ext, body)
+        if problem:
+            return self._json({"error": problem}, 400)
         UPLOADS.mkdir(parents=True, exist_ok=True)
-        name = f"{'voice' if ext in ('wav', 'aiff') else 'image'}-{int(time.time() * 1000)}.{ext}"
+        name = f"{'voice' if ext == 'wav' else 'image'}-{int(time.time() * 1000)}.{ext}"
         (UPLOADS / name).write_bytes(body)
         return self._json({"ref": f"demo/uploads/{name}"})
 

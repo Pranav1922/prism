@@ -1,0 +1,114 @@
+{
+ "id": "paraphrased_request_and_correction",
+ "description": "Neither utterance is a known example: the deterministic rule planner handles a paraphrased request ('I need a flight from Bengaluru to Delhi this Friday') and a paraphrased correction ('switch the destination to Goa'). The Delhi search is cancelled at the correction and the answer is grounded on Goa.",
+ "tags": [
+  "planner",
+  "paraphrase",
+  "interruption"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ],
+   "honors_cancel": false
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "I need a flight from Bengaluru to Delhi this Friday"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  },
+  {
+   "t": 1.4,
+   "type": "user.text",
+   "data": {
+    "text": "switch the destination to Goa"
+   },
+   "id": "fix"
+  },
+  {
+   "t": 1.6,
+   "type": "user.turn_end",
+   "id": "fix_end"
+  }
+ ],
+ "horizon": 30,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "origin": "BLR",
+     "destination": "GOI",
+     "date": "Fri"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    },
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "GOI"
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "cancels": [
+   {
+    "after": "fix",
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ],
+  "no_calls_after": [
+   {
+    "after": "fix",
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ],
+  "not_grounded_on": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   }
+  ],
+  "answer_turns": [
+   "ask_end",
+   "fix_end"
+  ]
+ }
+}

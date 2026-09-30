@@ -25,6 +25,10 @@ def accepted() -> str:
     return "Got it, working that out."
 
 
+def not_heard() -> str:
+    return "Sorry, I didn't catch that. Could you say it again?"
+
+
 def correction(slots: list[str]) -> str:
     return f"Okay, changing the {' and '.join(s.replace('_', ' ') for s in slots)}."
 

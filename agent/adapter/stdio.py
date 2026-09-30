@@ -2,7 +2,8 @@
 
     python -m agent.adapter.stdio [--fixtures PATH] [--journal PATH] [--planner SPEC] [--planner-latency L]
 
-SPEC: auto (default: PRISM_PLANNER if reachable, else scripted) | scripted | ollama:<model> | openai:<model> |
+SPEC: auto (default: PRISM_PLANNER if reachable, else scripted) | scripted (known examples, then rules) | fixtures
+(known examples only) | ollama:<model> | openai:<model> |
 replay:<journal>. L: measured | <seconds>. --perception local (default; real ASR/OCR for media files) | scripted.
 PRISM_JOURNAL_DIR=<dir> writes the journal to <dir>/<PRISM_SCENARIO>.jsonl on exit (model A/B evaluation).
 
@@ -35,6 +36,7 @@ from agent.model import Action, Event, canonical_json
 from agent.perception import LocalPerception
 from agent.planner import ScriptedPerception, ScriptedPlanner
 from agent.reasoner.planner import FallbackPlanner, ModelPlanner, ReplayPlanner, model_available, view_digest
+from agent.reasoner.rules import DeterministicPlanner, RulePlanner
 from agent.runtime import Runtime
 from agent.understand import Understanding, annotated
 from agent.understand_rules import recognize
@@ -54,7 +56,10 @@ def table_understanding(table: dict):
 def make_planner(spec: str, fixtures: dict, latency: str = "measured", timeout_s: float = 10.0) -> Any:
     """scripted | auto | ollama:<m> | openai:<m> | replay:<journal>. `auto` = PRISM_PLANNER (e.g. ollama:qwen2.5:7b) as
     PRIMARY with the scripted planner as SAFE FALLBACK if the model is reachable, else the scripted planner alone."""
-    scripted = ScriptedPlanner(fixtures.get("planner", {}), fixtures.get("planner_latency", 0.3))
+    known = ScriptedPlanner(fixtures.get("planner", {}), fixtures.get("planner_latency", 0.3))
+    if spec == "fixtures":  # known examples only (the Phase 1-5 scripted baseline)
+        return known
+    scripted = DeterministicPlanner(known, RulePlanner(fixtures.get("planner_latency", 0.3)))
     if spec == "scripted":
         return scripted
     if spec == "auto":
@@ -178,7 +183,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--understanding", choices=("rules", "scripted"), default="rules",
                     help="rules: deterministic recogniser (default); scripted: the old per-utterance table")
     ap.add_argument("--planner", default="auto",
-                    help="auto (PRISM_PLANNER if reachable, else scripted) | scripted | ollama:<model> | openai:<model> | replay:<journal>")
+                    help="auto (PRISM_PLANNER if reachable, else scripted) | scripted (known examples + rules) | fixtures | "
+                         "ollama:<model> | openai:<model> | replay:<journal>")
     ap.add_argument("--perception", default="local", choices=("local", "scripted"),
                     help="local: on-device ASR + tesseract OCR for media files, scripted fallback otherwise")
     ap.add_argument("--perception-latency", default="measured", help="measured | <virtual seconds>")

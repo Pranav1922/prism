@@ -50,6 +50,7 @@
         <div class="now-title" id="now-title">Ask for something, then change your mind while it works.</div>
         <div class="now-detail" id="now-detail"></div>
       </div>
+      <ol class="chain" id="chain" aria-label="What happened, in order"></ol>
       <div class="moments" id="moments" aria-live="polite"></div>
       <div class="timeline-wrap">
         <div class="timeline" id="timeline" role="img" aria-label="Timeline of user input, perception, planning, tool calls and agent speech"></div>
@@ -102,6 +103,7 @@
         <button class="mic" id="mic" aria-label="Hold to talk (or press and hold the M key)" title="Hold to talk">
           <span class="mic-icon" aria-hidden="true"></span><span class="mic-level" id="mic-level"></span>
         </button>
+        <span class="mic-status" id="mic-status" aria-live="polite"></span>
         <div class="menu-wrap">
           <button class="btn icon" id="clips-btn" aria-haspopup="true" aria-expanded="false" title="Prepared voice clips">♪ Clips</button>
           <div class="menu" id="clips-menu" hidden></div>

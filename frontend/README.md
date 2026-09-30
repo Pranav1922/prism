@@ -37,6 +37,7 @@ browser ──HTTP/SSE──► frontend/server.py ──► frontend/live.py (L
 | Area | Shows | Source |
 |---|---|---|
 | **Now** (top) | the single most important thing happening: listening, working (with elapsed time and parallel calls), change of plan, waiting for you, answer | derived from the mirrored state |
+| **What happened, in order** (ribbon) | the seven-stage causal chain: you asked → first reply → work started → you changed it → old work cancelled → stale result refused → grounded answer. Each stage lights up with its real time, only when its event is in the journal. Stages that did not occur are marked "not in this run". A call superseded after it had already finished counts as *replaced*, not *cancelled*. | journal |
 | **Key moments** | interruptions, stale results, safety decisions (injection dropped, confirmation required, no second booking), evidence applied, grounded answers, the evaluator verdict | kernel rules in the journal |
 | **Timeline** | lanes for You, Perception (speech/image), Understanding (fast-path class, planner spans), Tools (one bar per call), and Agent (what it said), all on one clock | journal + wire |
 | **Current task** | the agent's current understanding: each value and where it came from (heard / understood / from image), whether it is confirmed, what it replaced, open questions, paused tasks | slot registers, goals, pending |
@@ -64,7 +65,7 @@ Every state also has a text label.
 | Input | How | Reaches the agent as |
 |---|---|---|
 | typed request or correction | the text box, or a suggested-request chip | `user.text` + `user.turn_end` |
-| voice | **hold** the mic button, or hold **M** | 16 kHz mono WAV → `user.audio` + `user.turn_end` → on-device speech recognition |
+| voice | **hold** the mic button, or hold **M** (max 15 s) | 16 kHz mono PCM WAV → `user.audio` + `user.turn_end` → on-device speech recognition |
 | prepared voice clips | ♪ Clips (plays the clip in the room and sends the same audio) | `user.audio` |
 | image | ▣ Image: the boarding-pass sample, an upload, or drag and drop a PNG/JPEG anywhere | `user.frame` → tesseract OCR |
 | speak replies aloud | 🔈 Voice (browser speech synthesis) | none; output only |
@@ -95,10 +96,29 @@ Keyboard: `/` focuses the text box; hold `M` to talk.
 | agent kernel, fast understanding, safety rules, protocol, journal | **real**: the same code the tests and evaluator run |
 | speech recognition | **real**: Apple on-device recognition (macOS, after `./scripts/build_asr.sh`). Fallback: scripted transcripts for the demo clips (the Speech chip says which) |
 | image understanding | **real**: tesseract OCR, extracting weekday, FROM/TO airport codes and flight numbers. Other images yield "nothing readable" |
-| planner | **deterministic** by default: it matches the request against known examples, tolerating recognition noise. Free-form requests outside them are reported honestly ("the deterministic planner doesn't know that request"). With `PRISM_PLANNER=ollama:qwen2.5:7b` and a running Ollama, a model plans, with a deterministic fallback per request |
+| planner | **deterministic** by default, in two stages. (1) The request is matched against known examples, tolerating recognition noise. (2) Otherwise, a rule planner handles common paraphrases of the supported tasks: flight search, booking and weather. Tools come from the manifest; values come from the schema, with a small city→airport table; missing values are asked for, never invented. A request that maps to no tool is reported honestly ("No plan for that request"). With `PRISM_PLANNER=ollama:qwen2.5:7b` and a running Ollama, a model plans, with the deterministic planner as per-request fallback |
 | tools (flights, booking, weather) | **simulated**: the evaluator's mock tool world with scripted latencies |
 | clock | **real time** in live mode. Guided demos can play at 2×, which changes virtual speed only, not event order or scores |
 | evaluator verdict | **real**: the unchanged black-box evaluator on this run's trace; an INTERNAL metric, not a Samsung score |
+
+## Microphone: what is validated
+
+The path is: hold → capture (Web Audio, 16 kHz mono PCM WAV) → release → upload (content-checked: RIFF/PCM header, 0.3–60 s) → `user.audio` + `user.turn_end` → on-device recognition → transcript → fast understanding → kernel.
+
+| Part | How it is checked |
+|---|---|
+| WAV encoder, resampling, clipping, unsupported-browser reasons, never hanging when the microphone does not start or audio is blocked | `tests/test_microphone.py`, which runs the shipped `recorder.js` in Node |
+| browser-encoded speech recognised on-device | `tests/test_microphone.py` (macOS) |
+| upload content validation | `tests/test_microphone.py` |
+| live session: recording → transcript → the turn closes on the transcript or the end of turn (never the 1 s timer) → plan → tool call; silence → "Sorry, I didn't catch that" | `tests/test_microphone.py` (macOS) |
+| the real browser path: real user gesture, the page's recorder, upload, server, recognition, UI transition, and a **spoken interruption cancelling the running search** | run in Chrome with only the microphone *hardware* replaced by a stream playing the demo clips |
+
+Physical microphone hardware was not exercised by automated checks. A real hardware recording from an earlier session ("Hello hello hello", 2 s, 16 kHz) is present in `demo/uploads/` and is recognised correctly.
+
+Failures are reported, never hidden:
+- **Microphone disabled.** When the page is not a secure context or has no Web Audio, or when recognition is unavailable, the button is disabled with the reason.
+- **Toasts.** Denied permission, no microphone, capture blocked or not started (bounded at 3 s: the button never gets stuck), recordings that are too short, and silence each produce a toast.
+- **Nothing recognised.** When recognition returns nothing, the agent says "Sorry, I didn't catch that", and the input pill shows "(speech not recognised)".
 
 ## Fallback and error behaviour
 
@@ -114,6 +134,8 @@ Keyboard: `/` focuses the text box; hold `M` to talk.
 - **One session at a time** (single presenter). Starting a new one replaces the current one.
 - **Planning is deterministic** on this machine (see `docs/PHASE5_MODEL_EVALUATION.md`), so free-form requests outside the known examples do not plan. Fast understanding still reacts to them: corrections still cancel work at once.
 - **Voice is push-to-talk.** Recognition runs when you release (it is not streaming). A spoken interruption therefore lands after recognition (about 0.2–0.9 s), not mid-utterance.
+- **Deterministic planner scope.** It covers the demo domain (flight search, booking, weather; about 20 cities in its airport table). Anything else, such as relative dates ("tomorrow") or cities outside the table, is asked about or not planned. It is never guessed.
+- **Very short screens.** Tested at 1440×789, 1536×826, 1280×720 and 1366×680. Only at 1366×680 does the timeline need a small scroll (about 40 px); the legend hides below 720 px of height.
 - **Model planner blocks new input.** With a model planner, the lockstep adapter processes the next input only after the model answers.
 - **Stored files.** Uploaded audio and images are stored under `demo/uploads/` (git-ignored).
 - **Layout.** It is designed for a laptop or projector (≥ 1280 px). Narrower screens stack the panels.

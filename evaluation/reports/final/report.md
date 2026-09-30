@@ -33,6 +33,7 @@
 | injection_in_search_result | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
 | missing_date_asks | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.12 | - |
 | parallel_weather_and_flights | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
+| paraphrased_request_and_correction | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 | rapid_corrections_during_planning | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.05 | - |
 | search_then_book_first | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
 | unavailable_capability | yes | 100.0 | 1.00 | n/a | 1.00 | 1.00 | 0.25 | - |
@@ -62,5 +63,5 @@
 | status_question_during_search | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | - |
 | two_slots_one_utterance | yes | 100.0 | 1.00 | 1.00 | 1.00 | 1.00 | 0.12 | 0.000 |
 
-**57/57 scenarios pass all checks; mean internal score 99.8.**
+**58/58 scenarios pass all checks; mean internal score 99.8.**
 

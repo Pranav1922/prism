@@ -3,7 +3,7 @@
 //   - the PRISM-LOCAL/0 wire messages plus the simulated tool world's ledger.
 // The browser keeps a MIRROR of the kernel's tables (it applies the journaled changes); it decides nothing.
 
-import { Recorder } from "./recorder.js";
+import { MAX_SECONDS, MIN_SECONDS, Recorder, SILENCE_PEAK, unsupportedReason } from "./recorder.js";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -40,7 +40,7 @@ function connect() {
 
 function handle(ev) {
   switch (ev.type) {
-    case "reset": fresh(ev.info, ev.capabilities); renderHonesty(); showMode(); $("#moments").innerHTML = ""; break;
+    case "reset": fresh(ev.info, ev.capabilities); renderHonesty(); showMode(); $("#moments").innerHTML = ""; window.refreshMic?.(); break;
     case "session":
       if (ev.state === "running") setStatus("running");
       else if (ev.state === "ended" || ev.state === "stopped") { setStatus("ended"); S.tLast = Math.max(S.tLast, ev.t || 0); }
@@ -111,14 +111,16 @@ function onIn(r) {
     case "PerceptionFailed": {
       const span = S.percep.find((x) => x.req === p.req_id);
       if (span) { span.t1 = t; span.failed = true; }
+      const audio = span && S.inputs.find((i) => i.kind === "audio" && i.eid === span.eid);
+      if (audio) audio.notHeard = true;
       break;
     }
     case "Proposal": case "ProposalFailed": {
       const pl = S.plans[p.req_id];
       if (pl && pl.t1 == null) { pl.t1 = t; pl.ok = e.kind === "Proposal"; pl.reason = p.reason; pl.payload = p; }
-      if (e.kind === "ProposalFailed" && (S.caps || META?.capabilities)?.planner.mode === "deterministic" && p.reason === "no_script")
-        addMoment(t, "plan", "The deterministic planner doesn't know that request",
-          "Your words were heard and understood by the real fast path, but planning on this machine uses fixed examples (no local model is reliable enough). Try one of the suggested requests.");
+      if (e.kind === "ProposalFailed" && (S.caps || META?.capabilities)?.planner.mode === "deterministic" && ["no_script", "no_plan"].includes(p.reason))
+        addMoment(t, "plan", "No plan for that request",
+          "Your words were heard and classified by the real fast path, but the deterministic planner (known examples, then rules for flight search, booking and weather) could not map them to a tool. Nothing was invented.");
       break;
     }
   }
@@ -192,9 +194,17 @@ function onStep(r) {
   const interrupting = superseded.filter((x) => ["not_desired", "unattributed_marker", "goal_inactive"].includes(x.reason));
   if (byUser && interrupting.length) {
     const text = ev.payload?.text;
-    S.cuts.push({ t, label: text ? `“${text}”` : "interrupt" });
-    addMoment(t, "interrupt", `Interrupted → ${interrupting.length} running call${interrupting.length > 1 ? "s" : ""} cancelled`,
-      `Same step as ${text ? `“${text}”` : "the interruption"} (0 ms, t=${fmtT(t)}): ${interrupting.map((x) => describeCall(S.calls[x.call_id])).join(", ")}.`);
+    // running = no result yet when superseded (the kernel cancels it); finished = its result was already in (replaced)
+    const running = interrupting.filter((x) => S.calls[x.call_id]?.t_result == null);
+    const finished = interrupting.filter((x) => S.calls[x.call_id]?.t_result != null);
+    S.cuts.push({ t, label: text ? `“${text}”` : "interrupt", running: running.length });
+    const who = `Same step as ${text ? `“${text}”` : "the interruption"} (0 ms, t=${fmtT(t)})`;
+    if (running.length)
+      addMoment(t, "interrupt", `Interrupted → ${running.length} running call${running.length > 1 ? "s" : ""} cancelled`,
+        `${who}: ${running.map((x) => describeCall(S.calls[x.call_id])).join(", ")}.`);
+    if (finished.length)
+      addMoment(t, "interrupt", `Changed after the result → ${finished.length} earlier result${finished.length > 1 ? "s" : ""} no longer used`,
+        `${who}: ${finished.map((x) => describeCall(S.calls[x.call_id])).join(", ")} had already finished; nothing to cancel, new work replaces it.`);
   }
 }
 
@@ -234,7 +244,7 @@ function pushSpeech(s) {
 }
 
 function addMoment(t, kind, head, detail) {
-  if (S.moments.some((m) => m.kind === kind && m.head === head && Math.abs(m.t - t) < 0.01)) return;
+  if (S.moments.some((m) => m.kind === kind && m.head === head && Math.abs(m.t - t) < 2)) return;  // same fact, repeated steps
   S.moments.push({ t, kind, head, detail, at: performance.now() });
 }
 
@@ -280,6 +290,7 @@ function render() {
   S.dirty = false;
   $("#landing").hidden = S.status !== "idle";
   renderMoments();
+  renderChain();
   renderFacts();
   renderTask();
   renderTrust();
@@ -297,7 +308,7 @@ function renderNow(now) {
   const running = S.callOrder.map((id) => S.calls[id]).filter((c) => callState(c) === "running");
   const openPlans = S.planOrder.map((id) => S.plans[id]).filter((p) => p.t1 == null);
   const listening = S.percep.filter((p) => p.t1 == null);
-  const recentCut = [...S.moments].reverse().find((m) => m.kind === "interrupt" && now - m.t < 2.5);
+  const recentCut = [...S.moments].reverse().find((m) => m.kind === "interrupt" && now - m.t < 2.5);  // cancel or replace
   const final = lastFinal();
   const g = activeGoal();
   const waiting = Object.values(S.tables.pending).find((p) => p.asked && !p.resolved && g && p.goal_id === g.goal_id);
@@ -328,7 +339,40 @@ function renderMoments() {
   const items = [...S.moments].slice(-8).reverse();
   if (!items.length) { box.innerHTML = `<div class="empty-note" data-k="empty">Key moments (interruptions, stale results, safety decisions, grounded answers) appear here as they happen.</div>`; return; }
   reconcile(box, items.map((m) => ({ key: `${m.kind}|${m.head}|${m.t}`, tag: "div", cls: `moment ${m.kind} ${performance.now() - m.at < 3000 ? "fresh" : ""}`,
-    html: `<b><span class="t">${fmtT(m.t)}</span>${esc(m.head)}</b>${esc(m.detail).slice(0, 150)}`, title: m.detail })));
+    html: `<span class="t">${fmtT(m.t)}</span>${esc(m.head)}`, title: `${m.head}\n${m.detail}` })));
+}
+
+// The causal chain a judge should see, in order. Each stage lights up only when its event is in the journal.
+function renderChain() {
+  const box = $("#chain");
+  if (S.status === "idle") { box.innerHTML = ""; return; }
+  const first = (xs) => (xs.length ? Math.min(...xs) : null);
+  const asked = first(S.inputs.filter((i) => i.kind !== "eot").map((i) => i.t));
+  const eot = first(S.inputs.filter((i) => i.kind === "eot").map((i) => i.t));
+  const spoke = first(S.speech.map((s) => s.t));
+  const working = first(S.callOrder.map((id) => S.calls[id].t_call));
+  const changed = first([...S.cuts.map((c) => c.t), ...S.classes.filter((c) => c.cls === "CORRECTION" || c.cls === "GOAL_SWITCH").map((c) => c.t)]);
+  const cancelled = first(S.callOrder.map((id) => S.calls[id]).filter((c) => c.t_cancel != null && (c.t_result == null || c.t_result > c.t_cancel)
+    && ["not_desired", "unattributed_marker", "goal_inactive"].includes(c.reason)).map((c) => c.t_cancel));
+  // a side effect that completed despite the cancel is recorded as done, not "refused": only read-only results count
+  const stale = first(S.callOrder.map((id) => S.calls[id]).filter((c) => c.stale && !sideEffecting(c.tool)).map((c) => c.t_result));
+  let f = [...S.speech].filter((s) => s.kind === "final" && s.act === "answer").pop();
+  const lastChange = S.cuts.length ? S.cuts[S.cuts.length - 1].t : null;
+  if (f && lastChange != null && f.t < lastChange) f = undefined;  // that answer predates your latest change
+  const ended = S.status === "ended";
+  const short = box.clientWidth > 1100;  // room for the notes inline; otherwise they are in the tooltip
+  const stage = (label, t, note) => {
+    const state = t != null ? "done" : ended ? "absent" : "waiting";
+    return `<li class="${state}" title="${esc(label + (t != null ? ` at ${fmtT(t)}` : "") + (note ? ` · ${note}` : ""))}"><b>${label}</b><span>${t != null ? fmtT(t) + (short && note ? " · " + esc(note) : "") : ended ? "not in this run" : "…"}</span></li>`;
+  };
+  box.innerHTML =
+    stage("You asked", asked) +
+    stage("First reply", spoke, spoke != null && eot != null && spoke >= eot ? `+${(spoke - eot).toFixed(2)} s` : "") +
+    stage("Work started", working, working != null ? S.calls[S.callOrder[0]].tool.replace(/_/g, " ") : "") +
+    stage("You changed it", changed) +
+    stage("Old work cancelled", cancelled, cancelled != null && changed != null ? (cancelled === changed ? "same step" : `+${(cancelled - changed).toFixed(2)} s`) : "") +
+    stage("Stale result refused", stale) +
+    stage("Grounded answer", f?.t, f ? `on ${(f.grounded || []).join(", ") || "committed operation"}` : "");
 }
 
 // Session facts: counts and latencies read off this session's journal (nothing estimated).
@@ -344,15 +388,15 @@ function renderFacts() {
   const asr = S.percep.filter((p) => p.kind === "asr" && p.t1 != null && !p.failed).map((p) => p.t1 - p.t0);
   const sm = (META?.manifest || []).filter((t) => t.effect === "state_changing").map((t) => t.name);
   const effects = S.sideEffects.length;
-  const fact = (v, l, tip) => `<div class="fact" title="${esc(tip)}"><b>${v}</b><span>${l}</span></div>`;
+  const fact = (v, l, tip) => `<div class="fact" title="${esc(tip)}"><b>${v}</b> <span>${l}</span></div>`;
   box.innerHTML =
-    fact(calls.length, "tool calls started", "every tool.call the agent emitted") +
+    fact(calls.length, "calls", "every tool.call the agent emitted") +
     fact(superseded.length, "superseded", "calls the kernel marked no longer wanted (and cancelled if still running)") +
-    fact(used, "grounding the answer", "the calls the final answer rests on") +
-    fact(stale, "late results refused", "results that arrived for superseded calls: recorded, never used") +
-    fact(S.cuts.length ? "0 ms" : "–", "interruption → cancel", "decided in the same kernel step as the correcting input (virtual time)") +
+    fact(used, "in the answer", "the calls the final answer rests on") +
+    fact(stale, "stale refused", "results that arrived for superseded calls: recorded, never used") +
+    fact(S.cuts.some((c) => c.running) ? "0 ms" : "–", "interrupt → cancel", "decided in the same kernel step as the correcting input (virtual time)") +
     (asr.length ? fact(`${(asr.reduce((a, b) => a + b, 0) / asr.length).toFixed(2)} s`, "speech recognition", "mean on-device recognition time this session (voice interruptions land after recognition)") : "") +
-    fact(sm.length ? `${effects}` : "–", "side effects executed", "state-changing tool executions in the tool world's own ledger") +
+    fact(sm.length ? `${effects}` : "–", "side effects", "state-changing tool executions in the tool world's own ledger") +
     fact(S.steps.length, "kernel steps", "each input handled by one deterministic, journaled step");
 }
 
@@ -426,7 +470,7 @@ function renderTimeline(now) {
     const top = row ? 36 : 4; row = 1 - row;
     const corr = i.cls === "CORRECTION" || i.cls === "GOAL_SWITCH";
     const icon = { text: "⌨", heard: "🎙", audio: "🎙", image: "▣", interrupt: "✋" }[i.kind];
-    const label = i.kind === "audio" ? (i.heard != null ? `“${esc(i.heard)}”` : `speaking… (${esc(i.ref.split("/").pop())})`) : i.kind === "image" ? `image: ${esc(i.ref.split("/").pop())}`
+    const label = i.kind === "audio" ? (i.heard != null ? `“${esc(i.heard)}”` : i.notHeard ? "(speech not recognised)" : `recognising… (${esc(i.ref.split("/").pop())})`) : i.kind === "image" ? `image: ${esc(i.ref.split("/").pop())}`
       : i.kind === "interrupt" ? "interrupt" : `“${esc(i.text)}”`;
     you.push({ key: `i${n}`, t: i.t, row: top > 4 ? 1 : 0, cls: `item pill ${corr ? "correction" : ""}`, style: `left:${x(i.t)}px;top:${top}px`,
       html: `<span class="ico">${icon}</span>${label}`, title: `${fmtT(i.t)} ${i.kind} ${i.text || i.ref || ""}${i.cls ? " · " + i.cls : ""}` });
@@ -462,8 +506,9 @@ function renderTimeline(now) {
 
   // TOOLS: one row per call; superseded bars turn hatched, a dashed tail shows the tool still running, a red mark the stale result
   const tools = [];
+  const ROW = innerHeight < 720 ? 30 : 34;  // tool rows: tighter on short screens so the whole story stays visible
   S.callOrder.forEach((id, idx) => {
-    const c = S.calls[id], st = callState(c), top = 8 + idx * 34;
+    const c = S.calls[id], st = callState(c), top = 8 + idx * ROW;
     const endActive = st === "superseded" ? (c.t_cancel ?? c.t_result ?? now) : (c.t_result ?? now);
     const tip = `${c.id} ${c.tool} ${JSON.stringify(c.args)}\ncalled ${fmtT(c.t_call)}` + (c.t_cancel != null ? `\nsuperseded ${fmtT(c.t_cancel)} (${c.reason})` : "") +
       (S.cancelIgnored[c.id] != null ? "\nthe tool ignored the cancel and kept running" : "") +
@@ -484,7 +529,7 @@ function renderTimeline(now) {
         title: `result ${fmtT(c.t_result)}` });
   });
   reconcile(box("tools"), tools);
-  tl.querySelector('[data-lane="tools"]').style.height = `${Math.max(46, 16 + S.callOrder.length * 34)}px`;
+  tl.querySelector('[data-lane="tools"]').style.height = `${Math.max(46, 16 + S.callOrder.length * ROW)}px`;
 
   // AGENT
   const agent = S.speech.map((s, n) => ({
@@ -562,9 +607,11 @@ function renderTrust() {
   }
   body.className = "";
   let html = "";
-  if (f) html += `<div class="answer">${esc(f.text)}</div>`;
+  const outdated = f && S.cuts.length && f.t < S.cuts[S.cuts.length - 1].t;
+  if (f) html += outdated ? `<div class="fineprint" style="margin:0 0 4px">Earlier answer, before your latest change (a new one is on its way):</div><div class="answer" style="opacity:.6">${esc(f.text)}</div>`
+    : `<div class="answer">${esc(f.text)}</div>`;
   html += `<ul class="basis">`;
-  if (f) for (const id of f.grounded || []) {
+  if (f && !outdated) for (const id of f.grounded || []) {
     const c = S.calls[id];
     html += `<li class="used">Used <code>${esc(id)}</code> ${esc(c ? `${words(c.tool)} (${argsShort(c.args)})` : "")}${c?.t_result != null ? ` — result at ${fmtT(c.t_result)}` : ""}</li>`;
   }
@@ -590,7 +637,7 @@ function renderTrust() {
       <span class="${v.passed ? "verdict-pass" : "verdict-fail"}">${v.passed ? "PASS" : "FAIL"} · ${v.internal_score}</span></div>
       <div class="bars">${bar("task_completion", "Task completion")}${bar("interruption_recovery", "Interruption recovery")}${bar("response_latency", "Response latency")}${bar("safety_protocol", "Safety & protocol")}</div>
       ${failed.length ? `<div class="fineprint">Failed checks: ${esc(failed.join(", "))}</div>` : ""}
-      <div class="fineprint">${v.checks.length} checks by the unchanged black-box evaluator on this run's wire trace. INTERNAL PRISM-STYLE metric, not a Samsung score.</div></div>`;
+      <div class="fineprint">${v.checks.length} checks, unchanged black-box evaluator, this run's wire trace. INTERNAL metric, not a Samsung score.</div></div>`;
   }
   body.innerHTML = html;
 }
@@ -721,12 +768,17 @@ function renderHonesty() {
   const c = S.caps || META?.capabilities;
   if (!c) return;
   const chip = (cls, label, value, tip) => `<span class="chip ${cls}" tabindex="0" title="${esc(tip)}"><span class="dot"></span>${label} <b>${value}</b></span>`;
-  $("#honesty").innerHTML =
+  const chips =
     chip(c.asr.real ? "real" : "fallback", "Speech", c.asr.real ? "on-device" : "fallback", c.asr.detail) +
     chip(c.ocr.real ? "real" : "fallback", "Vision", c.ocr.real ? "OCR" : "fallback", c.ocr.detail) +
     chip(c.planner.mode === "model" ? "real" : "fallback", "Planner", c.planner.mode === "model" ? "model" : "deterministic", c.planner.detail) +
     chip("sim", "Tools", "simulated", c.tools.detail) +
-    chip("real", "Clock", "real time", c.clock.detail);
+    (S.info?.speed > 1 ? chip("sim", "Clock", `${S.info.speed}× playback`, "Guided demo played faster: virtual time runs at this multiple of real time; event order and the evaluator result are unchanged.")
+      : chip("real", "Clock", "real time", c.clock.detail));
+  // wide screens: the chips inline; narrower ones: one "What's real" chip that expands on hover/focus (same content)
+  $("#honesty").innerHTML = `<div class="honesty-full">${chips}</div>
+    <div class="honesty-compact"><button class="chip summary" aria-haspopup="true"><span class="dot"></span>What's real ▾</button>
+      <div class="honesty-pop" role="list">${chips}</div></div>`;
 }
 
 // ---------------------------------------------------------------------------------------------- actions
@@ -856,25 +908,60 @@ async function init() {
     if (f) uploadAndSend("frame", f, f.type === "image/png" ? "png" : "jpg");
   });
 
-  // push-to-talk: hold the button, or hold M
+  // push-to-talk: hold the button, or hold M. Release -> 16 kHz WAV -> upload -> user.audio -> on-device recognition.
   const mic = $("#mic");
-  let rec = null, busy = false;
+  const status = (text) => { $("#mic-status").textContent = text; };
+  let rec = null, busy = false, tick = null, autoStop = null;
   const level = (v) => ($("#mic-level").style.transform = `scale(${1 + v * 0.5})`);
-  const down = async () => {
-    if (rec || busy || S.info?.mode === "guided") return;
-    try { rec = new Recorder(level); await rec.start(); mic.classList.add("recording"); }
-    catch { rec = null; toast("Microphone unavailable. Use the prepared voice clips (♪ Clips) instead."); }
+  const micBlocked = () => unsupportedReason(window) ||
+    ((S.caps || META?.capabilities)?.asr.real ? null : "speech recognition is not available on this machine (the prepared clips still work, with scripted transcripts)");
+  const down = () => {
+    if (rec || busy) return;
+    if (S.info?.mode === "guided") { toast("A guided demo is running: its inputs come from the scenario file. Click “Go live” to talk.", true); return; }
+    const blocked = micBlocked();
+    if (blocked) { toast(`Microphone unavailable: ${blocked}.`); return; }
+    rec = new Recorder(level);
+    let started;
+    try { started = rec.start(); } catch (e) { rec = null; toast(`Microphone unavailable: ${e.message}`); return; }  // inside the gesture
+    mic.classList.add("recording");
+    const t0 = performance.now();
+    status("● recording… release to send");
+    tick = setInterval(() => status(`● ${((performance.now() - t0) / 1000).toFixed(1)} s · release to send`), 100);
+    autoStop = setTimeout(() => { toast(`Stopped at ${MAX_SECONDS} s: push-to-talk is for short requests.`, true); up(); }, MAX_SECONDS * 1000);
+    started.catch(() => {});  // errors are reported by stop()
   };
   const up = async () => {
     if (!rec) return;
-    const r = rec; rec = null; mic.classList.remove("recording"); busy = true; mic.classList.add("busy");
-    const { wav, seconds } = await r.stop();
+    const r = rec; rec = null;
+    clearInterval(tick); clearTimeout(autoStop);
+    mic.classList.remove("recording"); busy = true; mic.classList.add("busy"); status("");
+    const res = await r.stop();
     busy = false; mic.classList.remove("busy");
-    if (seconds < 0.4) { toast("Hold to talk: keep the button pressed while you speak.", true); return; }
-    uploadAndSend("audio", wav, "wav");
+    if (res.error) {
+      const n = res.error.name;
+      toast(n === "NotAllowedError" || n === "SecurityError" ? "Microphone permission was denied. Allow it in the browser, or use the prepared clips (♪ Clips)."
+        : n === "StartTimeout" || n === "Suspended" ? `The microphone did not start${n === "Suspended" ? " (the browser blocked audio capture)" : ""}. Click the page once and hold the button again, or use the prepared clips.`
+        : n === "NotFoundError" ? "No microphone was found. Use the prepared clips (♪ Clips)."
+        : `Microphone error: ${res.error.message || n}`);
+      return;
+    }
+    if (res.seconds < MIN_SECONDS) { toast("Hold to talk: keep the button (or M) pressed while you speak.", true); return; }
+    if (res.peak < SILENCE_PEAK) { toast("No sound was captured. Check the microphone / input device, or use the prepared clips.", true); return; }
+    status("sending…");
+    await uploadAndSend("audio", res.wav, "wav");
+    status("");
   };
+  const refreshMic = () => {
+    const blocked = micBlocked();
+    mic.disabled = Boolean(blocked);
+    mic.title = blocked ? `Microphone unavailable: ${blocked}` : "Hold to talk (or hold M), release to send";
+  };
+  refreshMic();
+  window.refreshMic = refreshMic;
   mic.addEventListener("pointerdown", (e) => { e.preventDefault(); down(); });
   window.addEventListener("pointerup", up);
+  window.addEventListener("pointercancel", up);
+  window.addEventListener("blur", up);
   window.addEventListener("keydown", (e) => {
     if (e.target.matches("input, textarea, select")) return;
     if (e.key === "m" && !e.repeat) down();

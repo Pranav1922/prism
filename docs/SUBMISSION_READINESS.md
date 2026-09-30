@@ -4,7 +4,7 @@
 |---|---|
 | Date | 2026-09-30 |
 | Scope | Implementation A (this repository), final integration |
-| Headline | **57/57 internal black-box scenarios pass** (mean 99.8). **Real speech recognition and real OCR** run in the demo. 341 tests pass on Python 3.12 and 3.10; ruff and mypy clean. The Docker image runs the whole suite on Linux. |
+| Headline | **58/58 internal black-box scenarios pass** (mean 99.8). **Real speech recognition and real OCR** run in the demo. 373 tests pass on Python 3.12 and 3.10; ruff and mypy clean. The Docker image runs the whole suite on Linux. |
 
 **Nothing here was tested with the Samsung evaluation kit.** It was not available (UNK-1).
 - PRISM-LOCAL/0 is this project's own local protocol, not Samsung's.
@@ -83,7 +83,7 @@ The evaluator passes it with an internal score of 100.
 | the same, in Docker (Linux, scripted ASR, real tesseract) | 57 | 57 | — | — | — | — | — |
 | Phase 4 baseline vs final, on the 47 shared scenarios | 47 | 47 → 47 | 99.9 → 99.9 | identical | identical | identical | identical |
 
-Per suite: reference 12/12, adversarial 22/22, understanding 13/13, planner 8/8, demo 2/2. First substantive response is 0.25 s p50. Interruption → cancel is 0.00 s (n = 16).
+Per suite: reference 12/12, adversarial 22/22, understanding 13/13, planner 9/9, demo 2/2. First substantive response is 0.25 s p50. Interruption → cancel is 0.00 s (n = 16).
 
 Model planners: see [`PHASE5_MODEL_EVALUATION.md`](PHASE5_MODEL_EVALUATION.md). qwen2.5:7b is the best plan quality (40/55 with latency factored out) but too slow for an 8 s budget here. No model caused an unsafe side effect in about 570 requests.
 
@@ -126,7 +126,7 @@ Results: [`evaluation/reports/final/`](../evaluation/reports/final/report.md) (t
 ## 9. Known limitations
 
 1. **No Samsung kit.** The wire format, clock and scenarios are our own. Only `agent/adapter/` should change when the kit arrives, but that is unverified.
-2. **Planner.** No available local model is reliable and fast enough on this machine. The prototype and demo use the **deterministic scripted planner**, whose fixtures are keyed by utterance. It does not generalise to unseen requests. A configured model (`PRISM_PLANNER=ollama:qwen2.5:7b`) is used when reachable, with a per-request scripted fallback. Model quality is 44–61 % case-correct ([evidence](PHASE5_MODEL_EVALUATION.md)).
+2. **Planner.** No available local model is reliable and fast enough on this machine. The prototype and demo use the **deterministic planner**: known examples first (tolerant of recognition noise), then a rule planner for common paraphrases of flight search, booking and weather. The rule planner uses tools from the manifest, schema-bound values, a small city→airport table, and asks rather than invents. Requests outside that domain are not planned. A configured model (`PRISM_PLANNER=ollama:qwen2.5:7b`) is used when reachable, with a per-request scripted fallback. Model quality is 44–61 % case-correct ([evidence](PHASE5_MODEL_EVALUATION.md)).
 3. **Audio.** File-based, non-streaming, macOS-only real ASR, and no microphone capture. Voice interruption latency equals recognition time.
 4. **Vision.** OCR + regex-level extraction only.
 5. **Tools.** The mock tool world only; no real booking API.
@@ -150,7 +150,7 @@ brew install tesseract                      # OCR, if missing
 .venv/bin/python demo/run_demo.py           # both demos + evaluator verdict (add --speak to hear it)
 
 # validation
-.venv/bin/python -m pytest                  # 341 tests
+.venv/bin/python -m pytest                  # 373 tests
 .venv/bin/python -m evaluation.run all --agent impl_a --out evaluation/reports/final
 .venv/bin/ruff check agent evaluation tests scripts && .venv/bin/mypy agent evaluation
 
