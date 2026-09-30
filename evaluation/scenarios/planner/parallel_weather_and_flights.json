@@ -1,0 +1,71 @@
+{
+ "id": "parallel_weather_and_flights",
+ "description": "Two independent read-only tasks in one request; both are needed for the answer.",
+ "tags": [
+  "planner",
+  "parallel"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  },
+  "get_weather": {
+   "behaviors": [
+    {
+     "latency": 1.0,
+     "status": "ok",
+     "gen": "weather"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday and tell me the weather in Delhi"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  }
+ ],
+ "horizon": 40,
+ "expect": {
+  "final": {
+   "complete": true
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL",
+     "date": "Fri"
+    },
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "get_weather",
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "answer_turns": [
+   "ask_end"
+  ]
+ }
+}

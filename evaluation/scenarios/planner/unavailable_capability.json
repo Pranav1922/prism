@@ -1,0 +1,50 @@
+{
+ "id": "unavailable_capability",
+ "description": "The user asks for something no tool can do. No tool may be called; the user still gets an answer.",
+ "tags": [
+  "planner",
+  "tool_selection"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {},
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "order me a large pizza"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.4,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  }
+ ],
+ "horizon": 20,
+ "expect": {
+  "calls": [
+   {
+    "tool": "search_flights",
+    "min": 0,
+    "max": 0
+   },
+   {
+    "tool": "book_flight",
+    "min": 0,
+    "max": 0
+   },
+   {
+    "tool": "get_weather",
+    "min": 0,
+    "max": 0
+   }
+  ],
+  "answer_turns": [
+   "ask_end"
+  ]
+ }
+}

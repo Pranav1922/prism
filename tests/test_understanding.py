@@ -257,9 +257,9 @@ def test_goal_switch_withholds_the_abandoned_work_until_the_planner_answers_d11(
 
 def test_fast_path_never_dispatches_a_state_changing_call_itself():
     tools = {"create_ticket": Behavior(None)}
-    plans = {"ticket for my cracked screen on Monday": PLANS["ticket for my cracked screen on Monday"],
+    plans = {"create a ticket for my cracked screen on Monday": PLANS["ticket for my cracked screen on Monday"],
              "no, make it Wednesday": {"intent": "create_ticket"}}
-    sim = run([(0.1, say("ticket for my cracked screen on Monday")), (0.3, eot()),
+    sim = run([(0.1, say("create a ticket for my cracked screen on Monday")), (0.3, eot()),
                (1.0, say("no, make it Wednesday"))], tools=tools, plans=plans)  # turn never closed
     calls = list(sim.calls().values())
     assert len(calls) == 1 and "Mon" in calls[0].args_json  # nothing new while the user holds the floor

@@ -1,0 +1,86 @@
+{
+ "id": "search_then_book_first",
+ "description": "A dependent task: book a flight chosen from the search result ('the first one'). The booking must use the current result and happen exactly once.",
+ "tags": [
+  "planner",
+  "state_changing",
+  "dependency"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  },
+  "book_flight": {
+   "behaviors": [
+    {
+     "latency": 1.0,
+     "status": "ok",
+     "gen": "booking"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  },
+  {
+   "t": 12.0,
+   "type": "user.text",
+   "data": {
+    "text": "book the first one for one person"
+   },
+   "id": "book"
+  },
+  {
+   "t": 12.2,
+   "type": "user.turn_end",
+   "id": "book_end"
+  }
+ ],
+ "horizon": 40,
+ "expect": {
+  "final": {
+   "required": true
+  },
+  "calls": [
+   {
+    "tool": "book_flight",
+    "args": {
+     "flight_id": "DEL-701",
+     "passengers": 1
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "side_effects": {
+   "book_flight": {
+    "min": 1,
+    "max": 1
+   }
+  },
+  "answer_turns": [
+   "book_end"
+  ]
+ }
+}

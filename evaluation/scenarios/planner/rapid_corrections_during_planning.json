@@ -1,0 +1,99 @@
+{
+ "id": "rapid_corrections_during_planning",
+ "description": "Two corrections arrive while the first plan is still being made. The last value wins.",
+ "tags": [
+  "planner",
+  "interruption",
+  "stale_planner"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi on Friday"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.3,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  },
+  {
+   "t": 0.35,
+   "type": "user.text",
+   "data": {
+    "text": "actually, to Mumbai"
+   },
+   "id": "fix1"
+  },
+  {
+   "t": 0.4,
+   "type": "user.turn_end"
+  },
+  {
+   "t": 0.45,
+   "type": "user.text",
+   "data": {
+    "text": "no wait, Goa"
+   },
+   "id": "fix2"
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end",
+   "id": "fix2_end"
+  }
+ ],
+ "horizon": 40,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "destination": "GOI"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "GOI"
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "not_grounded_on": [
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "DEL"
+    }
+   },
+   {
+    "tool": "search_flights",
+    "args": {
+     "destination": "BOM"
+    }
+   }
+  ]
+ }
+}

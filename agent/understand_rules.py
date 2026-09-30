@@ -71,7 +71,7 @@ ROLES = {  # preposition -> fragments a slot-name token must start with for that
 }
 NUMBERS = {w: i for i, w in enumerate(("zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
                                        "ten", "eleven", "twelve"))}
-PENDING_CONFIRM = ("planner_clarify", "confirm")
+PENDING_CONFIRM = ("planner_clarify", "confirm", "authorise")
 LEAD = frozenset({"ok", "okay", "yes", "yeah", "yep", "sure", "right", "alright", "oh", "well", "so", "hmm", "um", "uh"})
 QUESTION_OPENERS = frozenset({"is", "has", "have", "did", "are", "was"})
 

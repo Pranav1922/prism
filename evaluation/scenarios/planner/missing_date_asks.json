@@ -1,0 +1,83 @@
+{
+ "id": "missing_date_asks",
+ "description": "A required value (the date) was never given: the agent must ask, not invent one, then search once it is answered.",
+ "tags": [
+  "planner",
+  "clarification"
+ ],
+ "manifest": {
+  "use": "flights"
+ },
+ "world": {
+  "search_flights": {
+   "behaviors": [
+    {
+     "latency": 2.0,
+     "status": "ok",
+     "gen": "flights"
+    }
+   ]
+  }
+ },
+ "inputs": [
+  {
+   "t": 0.1,
+   "type": "user.text",
+   "data": {
+    "text": "find flights from Bangalore to Delhi"
+   },
+   "id": "ask"
+  },
+  {
+   "t": 0.5,
+   "type": "user.turn_end",
+   "id": "ask_end"
+  },
+  {
+   "t": 12.0,
+   "type": "user.text",
+   "data": {
+    "text": "on Friday"
+   },
+   "id": "answer"
+  },
+  {
+   "t": 12.2,
+   "type": "user.turn_end",
+   "id": "answer_end"
+  }
+ ],
+ "horizon": 40,
+ "expect": {
+  "final": {
+   "complete": true,
+   "snapshot": {
+    "intent": "search_flights",
+    "slots": {
+     "date": "Fri"
+    }
+   }
+  },
+  "calls": [
+   {
+    "tool": "search_flights",
+    "min": 1,
+    "max": 1
+   },
+   {
+    "tool": "search_flights",
+    "args": {
+     "date": "Fri"
+    },
+    "min": 1,
+    "max": 1
+   }
+  ],
+  "clarify": {
+   "min": 1
+  },
+  "answer_turns": [
+   "ask_end"
+  ]
+ }
+}

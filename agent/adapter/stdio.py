@@ -1,14 +1,17 @@
 """Implementation A as a black-box PRISM-LOCAL/0 agent on stdin/stdout (virtual-time lockstep).
 
-    python -m agent.adapter.stdio [--fixtures PATH] [--journal PATH]
+    python -m agent.adapter.stdio [--fixtures PATH] [--journal PATH] [--planner SPEC] [--planner-latency L]
+
+SPEC: scripted (default) | ollama:<model> | openai:<model> | replay:<journal>. L: measured | <seconds>.
+PRISM_JOURNAL_DIR=<dir> writes the journal to <dir>/<PRISM_SCENARIO>.jsonl on exit (model A/B evaluation).
 
 For each input line: fire this agent's internal deliveries (timers, worker results) due strictly before the
 message's time, process the message, write the resulting output lines, then one `agent.ready` line with
 `next_wakeup`. A `clock.tick` fires internal deliveries due at or before its time (the tie rule: harness
 events at time t are processed before the agent's own timers at t).
 
-Until real understanding and planning exist (Phases 3-4), the planner, fast-understanding annotations and
-perception are scripted from an AGENT-SIDE fixtures file; nothing implementation-specific travels on the wire.
+The scripted planner and perception read an AGENT-SIDE fixtures file; nothing implementation-specific travels on
+the wire. A model planner (Phase 5) replaces the scripted planner behind the same `reason` effect.
 """
 
 from __future__ import annotations
@@ -17,8 +20,10 @@ import argparse
 import dataclasses
 import hashlib
 import json
+import os
 import sys
 from pathlib import Path
+from typing import Any
 
 from agent.adapter.egress import Egress, EgressError, encode
 from agent.adapter.ingress import Ingress, Rejected, Tick
@@ -27,6 +32,7 @@ from agent.journal import Journal
 from agent.kernel import Config, Kernel
 from agent.model import Action, Event
 from agent.planner import ScriptedPerception, ScriptedPlanner
+from agent.reasoner.planner import ModelPlanner, ReplayPlanner, view_digest
 from agent.runtime import Runtime
 from agent.understand import Understanding, annotated
 from agent.understand_rules import recognize
@@ -43,20 +49,34 @@ def table_understanding(table: dict):
     return understand
 
 
+def make_planner(spec: str, fixtures: dict, latency: str = "measured", timeout_s: float = 10.0) -> Any:
+    if spec == "scripted":
+        return ScriptedPlanner(fixtures.get("planner", {}), fixtures.get("planner_latency", 0.3))
+    if spec.startswith("replay:"):
+        return ReplayPlanner(spec.split(":", 1)[1])
+    from agent.reasoner.backends import OllamaBackend, OpenAICompatibleBackend
+    kind, _, model = spec.partition(":")
+    backend = {"ollama": OllamaBackend, "openai": OpenAICompatibleBackend}[kind](model)
+    return ModelPlanner(backend, timeout_s, None if latency == "measured" else float(latency))  # type: ignore[arg-type]
+
+
 class LocalAgent:
-    def __init__(self, fixtures: dict, config: Config | None = None, understanding: str = "rules"):
+    def __init__(self, fixtures: dict, config: Config | None = None, understanding: str = "rules",
+                 planner: str = "scripted", planner_latency: str = "measured", planner_timeout_s: float = 10.0):
         self.clock = FakeClock()
         self.sched = Scheduler(self.clock)
         understand = recognize if understanding == "rules" else table_understanding(fixtures.get("understanding", {}))
         self.kernel = Kernel(config, understand=understand)
         digest = hashlib.sha256(json.dumps(fixtures, sort_keys=True).encode()).hexdigest()
+        self.planner = make_planner(planner, fixtures, planner_latency, planner_timeout_s)
+        described = getattr(self.planner, "describe", lambda: {"backend": "scripted"})()
         self.journal = Journal(header={"config": dataclasses.asdict(self.kernel.config), "mode": "sim-lockstep",
-                                       "backends": {"understanding": understanding, "planner": "scripted",
+                                       "planner_mode": "replay" if planner.startswith("replay:") else "live",
+                                       "backends": {"understanding": understanding, "planner": described,
                                                     "perception": "scripted"},
                                        "fixtures_sha256": digest})
         self.runtime = Runtime(self.kernel, self.journal, self._on_action, self._on_effect)
         self.ingress, self.egress = Ingress("harness"), Egress()
-        self.planner = ScriptedPlanner(fixtures.get("planner", {}), fixtures.get("planner_latency", 0.3))
         self.perception = ScriptedPerception(fixtures.get("perception", {}).get("frames", {}),
                                              fixtures.get("perception", {}).get("transcripts", {}),
                                              fixtures.get("perception_latency", 1.5))
@@ -110,6 +130,10 @@ class LocalAgent:
         kind, now = effect["effect"], self.clock.t
         if kind == "reason":
             t, event = self.planner.respond(effect, now)
+            detail = self.planner.records[-1] if getattr(self.planner, "records", None) else {}
+            self.journal.add({**detail, "type": "fx_io", "req_id": effect["req_id"], "view_digest": view_digest(effect["view"]),
+                              "t_request": now, "virtual_latency": round(t - now, 6), "kind": event.kind.value,
+                              "payload": event.payload})
             self.sched.at(t, event)
         elif kind == "perceive":
             t, event = self.perception.respond(effect, now)
@@ -126,16 +150,21 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--journal", default=None, help="write the kernel journal here on exit")
     ap.add_argument("--understanding", choices=("rules", "scripted"), default="rules",
                     help="rules: deterministic recogniser (default); scripted: the old per-utterance table")
+    ap.add_argument("--planner", default="scripted", help="scripted | ollama:<model> | openai:<model> | replay:<journal>")
+    ap.add_argument("--planner-latency", default="measured", help="measured | <virtual seconds> (model planners)")
+    ap.add_argument("--planner-timeout", type=float, default=10.0)
     args = ap.parse_args(argv)
-    agent = LocalAgent(json.loads(Path(args.fixtures).read_text()), understanding=args.understanding)
+    agent = LocalAgent(json.loads(Path(args.fixtures).read_text()), understanding=args.understanding,
+                       planner=args.planner, planner_latency=args.planner_latency, planner_timeout_s=args.planner_timeout)
     for line in sys.stdin:
         if not line.strip():
             continue
         for out in agent.handle(line):
             sys.stdout.write(out + "\n")
         sys.stdout.flush()
-    if args.journal:
-        agent.journal.write(args.journal)
+    journal_dir = os.environ.get("PRISM_JOURNAL_DIR")
+    if args.journal or journal_dir:
+        agent.journal.write(args.journal or str(Path(journal_dir or ".") / f"{os.environ.get('PRISM_SCENARIO', 'session')}.jsonl"))
     return 0
 
 

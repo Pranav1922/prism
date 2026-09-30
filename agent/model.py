@@ -187,6 +187,7 @@ class Goal:
     graph: tuple[Node, ...] = ()
     plan_rev: int = 0
     final_keys: tuple | None = None  # desired keys when the last FINAL was emitted
+    graph_seq: int = 0  # based_on_seq of the proposal that set the graph; an older proposal never overwrites it (D14)
 
 
 @dataclass(frozen=True)
@@ -247,6 +248,7 @@ class Request:
     based_on_seq: int
     user_seq: int | None  # user-content seq behind the request (provenance); None if there was none
     open: bool = True
+    may_change: bool = True  # the turn may change the task (not only status questions): D14 withholds side effects
 
 
 @dataclass(frozen=True)

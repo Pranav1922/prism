@@ -7,6 +7,8 @@ checked by dedicated tests. Any violation raises InvariantViolation naming the i
 
 from __future__ import annotations
 
+import json
+
 from agent.kernel import Kernel, State, StepResult, active_goal, op_state, resolve, state_reader
 from agent.model import (
     KNOWN_OUTCOMES,
@@ -23,6 +25,8 @@ from agent.model import (
     canonical_json,
     snapshot,
 )
+from agent.proposal import authorised
+from agent.proposal import grounded as said_by_user
 from agent.protocol import validate_action
 
 RETRY_REASONS = ("timeout", "error", "unknown")
@@ -182,6 +186,18 @@ def check_step(k: CheckedKernel, before: State, after: State, event: Event, res:
                 check(not set(p.slots) & set(read), "INV-14", f"dispatch with open clarification {p.pid}")
         check(g.origin_seq is not None and g.origin_seq in k.user_seqs, "INV-15",
               f"state-changing dispatch without user provenance (origin {g.origin_seq})")
+        spec = registry.get(call.tool)
+        said = [t for seq, t in after.get("meta", "utterances") if seq >= g.origin_seq]
+        confirmed = (g.goal_id, canonical_json([call.tool, json.loads(call.args_json)])) in after.get("meta", "authorised")
+        check(confirmed or authorised(call.tool, spec.description if spec else "", said), "INV-15/D13",
+              f"state-changing {call.tool} that no user utterance of the goal asked for")
+        for _, b in node.args:
+            reg = after.get("slots", (g.goal_id, b[1])) if b[0] == "slot" else None
+            if reg is not None and reg.source == "PLANNER":
+                check(confirmed or said_by_user(reg.value, " ".join(said)), "INV-15/D13",
+                      f"state-changing {call.tool} with planner value {reg.value!r} the user never said")
+        check(not any(r.open and r.may_change for _, r in after.items("reqs")), "INV-14/D14",
+              f"state-changing dispatch {call.call_id} while newer user input is still being planned")
     for op_id, attempts in before.items("ops"):
         if op_state(before, op_id) is OpState.COMMITTED:
             check(after.get("ops", op_id) == attempts, "INV-16", f"new attempt on COMMITTED operation {op_id}")

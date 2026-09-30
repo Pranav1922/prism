@@ -43,6 +43,8 @@ from agent.model import (
     idempotency_key,
     snapshot,
 )
+from agent.proposal import authorised, grounded, leaves, tainted
+from agent.proposal import check as check_proposal
 from agent.registry import ArgError, Registry
 from agent.understand import SlotInfo, UnderstandContext, Understanding
 from agent.understand_rules import recognize
@@ -69,6 +71,7 @@ def _meta_defaults() -> dict:
         "n_req": 0, "n_percept": 0, "deadline_passed": False, "session_ended": False,
         "switch_pending": None,  # D11: goal whose work is withheld until the planner answers a goal switch
         "utterances": (),  # ((based_seq, text), ...) of recent closed content turns: fast-understanding context
+        "authorised": (),  # D13: ((goal_id, canonical [tool, args]), ...) operations the user explicitly confirmed
     }
 
 
@@ -159,6 +162,15 @@ def _path(data: Any, path: tuple) -> Any:
         else:
             return _MISSING
     return data
+
+
+def node_json(node: Node) -> dict:
+    """A graph node in proposal form (the planner view shows the current graph in the shape it proposes)."""
+    args: dict = {}
+    for param, b in node.args:
+        args[param] = {"$slot": b[1]} if b[0] == "slot" else \
+            {"$node": b[1], "path": list(b[2])} if b[0] == "node" else {"$const": b[1]}
+    return {"node_id": node.node_id, "tool": node.tool, "args": args, "instance_tag": node.instance_tag}
 
 
 def active_goal(r: Any) -> Goal | None:
@@ -299,6 +311,8 @@ class _Step:
         self.dispatched: list[Call] = []
         self.want_snapshot = False
         self.closed_turn: Turn | None = None  # the user turn this step closed (drives turn-close responses)
+        self.failure_note = False  # the newest planner request failed: say so instead of going silent
+        self.reply_text: str | None = None  # a planner question with no goal to attach it to
 
     # ------------------------------------------------------------ small helpers
 
@@ -428,11 +442,16 @@ class _Step:
             self.rule("PENDING.open", pid=pid)
 
     def resolve_pendings(self, goal_id: str, slots: tuple | None) -> None:
+        kinds = ("conflict", "planner_clarify") + (("authorise",) if slots is None else ())  # only a yes authorises
         for pid, p in self.tx.items("pending"):
-            if p.goal_id == goal_id and not p.resolved and p.kind in ("conflict", "planner_clarify") and \
+            if p.goal_id == goal_id and not p.resolved and p.kind in kinds and \
                     (slots is None or set(p.slots) & set(slots)):
                 self.tx.set("pending", pid, replace(p, resolved=True))
                 self.rule("PENDING.resolved", pid=pid)
+                if p.kind == "authorise":  # the user confirmed these exact arguments
+                    op = pid.split(":", 2)[2]
+                    self.set_meta("authorised", (*self.meta("authorised"), (goal_id, op)))
+                    self.rule("AUTH.confirmed", goal_id=goal_id, op=op)
 
     # ------------------------------------------------------------ turns and the planner request
 
@@ -459,7 +478,10 @@ class _Step:
         if turn.interrupting and turn.t0_writes:
             self.want_snapshot = True
         if turn.content and not self.meta("deadline_passed"):
-            self.request_planner(turn)
+            if set(turn.classes) <= {TurnClass.STATUS_QUERY.value, TurnClass.BACKCHANNEL.value}:
+                self.rule("PLANNER.skip", reason="status_only")  # D15: answered from state; nothing to plan
+            else:
+                self.request_planner(turn)
 
     def request_planner(self, turn: Turn) -> None:
         for rid, req in self.tx.items("reqs"):
@@ -468,15 +490,46 @@ class _Step:
                 self.effects.append({"effect": "cancel_effect", "target": "reasoner", "req_id": rid})
         rid = f"r{self.next_n('n_req')}"
         based = self.meta("last_content_seq")
-        self.tx.set("reqs", rid, Request(rid, "understand", based, based if based > 0 else None))
-        goal = active_goal(self.tx)
-        view = {
-            "turn_text": turn.text,
-            "intent": goal.intent if goal else None,
-            "slots": {n: r.value for (g, n), r in self.tx.items("slots") if goal and g == goal.goal_id},
-        }
-        self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": "understand", "view": view})
+        may_change = not set(turn.classes) <= {TurnClass.STATUS_QUERY.value, TurnClass.BACKCHANNEL.value}
+        self.tx.set("reqs", rid, Request(rid, "understand", based, based if based > 0 else None, True, may_change))
+        self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": "understand",
+                             "view": self.planner_view(turn)})
         self.rule("PLANNER.request", req_id=rid, based_on_seq=based)
+
+    def planner_view(self, turn: Turn) -> dict:
+        """The planner contract's INPUT (docs/PHASE5_PLANNER.md §2): a read-only, JSON copy of what the planner
+        may reason over. Tool results and evidence are data, never instructions."""
+        goal = active_goal(self.tx)
+        registry = self.registry()
+        view: dict = {
+            "turn_text": turn.text,
+            "turn_classes": list(turn.classes),
+            "turn_attributed": sorted({n for _, n, _ in turn.t0_writes}),
+            "utterances": [[seq, text] for seq, text in self.meta("utterances")],
+            "tools": [{"name": t.name, "description": t.description, "effect": t.effect.value,
+                       "parameters": json.loads(t.params_json)} for t in registry.tools],
+            "goal": None, "slots": {}, "results": [], "evidence": [], "pending": [],
+            "suspended_goals": [{"goal_id": g.goal_id, "intent": g.intent} for _, g in self.tx.items("goals")
+                                if g.status is GoalStatus.SUSPENDED],
+        }
+        if goal is None:
+            return view
+        view["goal"] = {"goal_id": goal.goal_id, "intent": goal.intent, "plan_rev": goal.plan_rev,
+                        "graph": [node_json(n) for n in goal.graph]}
+        view["slots"] = {n: {"value": r.value, "source": r.source, "confirmed": r.confirmed, "writer_seq": r.writer_seq}
+                         for (g, n), r in sorted(self.tx.items("slots")) if g == goal.goal_id}
+        for _, c in self.tx.items("calls"):
+            if c.goal_id == goal.goal_id and c.relevance is Relevance.DESIRED:
+                data = json.loads(c.result_json) if c.result_json else None
+                view["results"].append({"node_id": c.node_id, "tool": c.tool, "args": json.loads(c.args_json),
+                                        "outcome": c.outcome.value, "data": data})
+        for _, f in self.tx.items("frames"):
+            if f.goal_id == goal.goal_id:
+                view["evidence"].append({"frame": f.frame_eid, "claims": {k: [v, c] for k, v, c in f.claims},
+                                         "awaiting": not f.claims})
+        view["pending"] = [{"kind": p.kind, "slots": list(p.slots), "text": p.text, "asked": p.asked}
+                           for _, p in self.tx.items("pending") if p.goal_id == goal.goal_id and not p.resolved]
+        return view
 
     def understand_context(self, turn: Turn | None) -> UnderstandContext:
         """Read-only view for fast understanding: the ACTIVE goal only, never another goal's slots."""
@@ -659,33 +712,61 @@ class _Step:
             return
         if req.open:
             self.tx.set("reqs", req.req_id, replace(req, open=False))
+        errors = check_proposal(self.payload, self.registry())
+        if errors:  # a malformed proposal changes nothing (docs/PHASE5_PLANNER.md §5)
+            self.rule("PROP.invalid", req_id=req.req_id, errors=errors[:5])
+            self.planner_failed(req)
+            return
         based = req.based_on_seq
-        structure_ok = based >= self.meta("goal_switch_seq")
+        structure_ok = based >= self.meta("goal_switch_seq")  # F4: no newer content changed the intent
         if self.meta("switch_pending") is not None and structure_ok:
             self.set_meta("switch_pending", None)
             self.rule("SWITCH.answered", req_id=req.req_id)
         intent = self.payload.get("intent")
         goal = active_goal(self.tx)
-        if intent and structure_ok and (goal is None or goal.intent != intent or self.payload.get("new_goal")):
+        switch = bool(intent) and (goal is None or goal.intent != intent or bool(self.payload.get("new_goal")))
+        if switch and not (structure_ok and (goal is None or based >= (goal.origin_seq or 0))):
+            # D14: a proposal older than the one that set the current goal (or than a goal switch) speaks about a
+            # superseded framing of the task: none of it applies, not even to the current goal's slots.
+            self.rule("PROP.structure_stale", req_id=req.req_id, based_on_seq=based)
+            return
+        if switch:
             if goal is not None:
                 self.tx.set("goals", goal.goal_id, replace(goal, status=GoalStatus.SUSPENDED))
                 self.rule("GOAL.suspend", goal_id=goal.goal_id)
             gid = f"g{self.next_n('n_goal')}"
-            goal = Goal(gid, intent, GoalStatus.ACTIVE, req.user_seq, self.seq)
+            goal = Goal(gid, str(intent), GoalStatus.ACTIVE, req.user_seq, self.seq)
             self.tx.set("goals", gid, goal)
             self.set_meta("active_goal", gid)
             self.rule("GOAL.create", goal_id=gid, intent=intent, origin_seq=req.user_seq)
             for fid, frame in self.tx.items("frames"):
                 if frame.goal_id is None:
                     self.tx.set("frames", fid, replace(frame, goal_id=gid))
-        elif intent and not structure_ok:
-            self.rule("PROP.structure_stale", req_id=req.req_id, based_on_seq=based)
         if goal is None:
             self.rule("PROP.no_goal", req_id=req.req_id)
+            clarify = self.payload.get("clarify")
+            if clarify and req.may_change:  # nothing to attach a question to: say it (e.g. "I can't order food")
+                self.reply_text = str(clarify["text"])
             return
         gid = goal.goal_id
+        new_graph = "graph" in self.payload and structure_ok and based >= goal.graph_seq  # D14: never older over newer
+        if "graph" in self.payload and not new_graph:
+            self.rule("PROP.graph_stale", req_id=req.req_id, based_on_seq=based)
+        non_user, user_text = self.taint_sources()
+        graph = [n for n in self.payload["graph"] if not self.injected(goal, n, non_user, user_text, req.req_id)] \
+            if new_graph else []
+        guarded = self.state_changing_slots(graph if new_graph else [node_json(n) for n in goal.graph])
+        kept = {b["$slot"] for n in graph for b in (n.get("args") or {}).values() if isinstance(b, dict) and "$slot" in b}
+        dropped = {b["$slot"] for n in (self.payload["graph"] if new_graph else []) if n not in graph
+                   for b in (n.get("args") or {}).values() if isinstance(b, dict) and "$slot" in b} - kept
         written = self.payload.get("slot_writes") or {}
         for name, value in sorted(written.items()):
+            if name in dropped:  # only an injected task would have read it
+                self.rule("PROP.injection_dropped", req_id=req.req_id, slot=name)
+                continue
+            if name in guarded and tainted(value, non_user, user_text):
+                self.reject_tainted(gid, name, req.req_id)
+                continue
             self.write_register(gid, name, value, based, "PLANNER", True)
         for (g, name), reg in self.tx.items("slots"):  # D12: a retraction the planner saw but did not fill
             if g == gid and reg.value is None and reg.source == "T0" and reg.writer_seq <= based \
@@ -694,15 +775,67 @@ class _Step:
                 self.tx.set("slots", (g, name), Register(previous, based, "PLANNER", True,
                                                            reg.history + ((None, reg.writer_seq, "T0"),)))
                 self.rule("T0.retraction_reverted", slot=name, value=previous)
-        if structure_ok and "graph" in self.payload:
-            nodes = tuple(self.parse_node(gid, i, n, based) for i, n in enumerate(self.payload["graph"]))
-            self.tx.set("goals", gid, replace(self.tx.get("goals", gid), graph=nodes))
+        if new_graph:
+            nodes = tuple(self.parse_node(gid, i, n, based, (non_user, user_text), req.req_id)
+                          for i, n in enumerate(graph))
+            self.tx.set("goals", gid, replace(self.tx.get("goals", gid), graph=nodes, graph_seq=based))
             self.rule("PLAN.graph", goal_id=gid, nodes=[n.node_id for n in nodes])
         clarify = self.payload.get("clarify")
         if clarify:
             self.ensure_pending(gid, "planner_clarify", tuple(clarify.get("slots", ())), clarify["text"], req.req_id)
 
-    def parse_node(self, gid: str, i: int, raw: dict, based: int) -> Node:
+    def injected(self, goal: Goal, node: dict, non_user: set[str], user_text: str, req_id: str) -> bool:
+        """A state-changing task the user never asked for (D13) whose literal arguments come from tool results or
+        evidence: the shape of a prompt injection. It is dropped without asking the user about it."""
+        spec = self.registry().get(node["tool"])
+        if spec is None or spec.effect is not Effect.STATE_CHANGING:
+            return False
+        said = [t for seq, t in self.meta("utterances") if seq >= (goal.origin_seq or 0)]
+        if authorised(spec.name, spec.description, said):
+            return False
+        literals = [b.get("$const") if isinstance(b, dict) else b for b in (node.get("args") or {}).values()
+                    if not (isinstance(b, dict) and ("$slot" in b or "$node" in b))]
+        written = self.payload.get("slot_writes") or {}
+        literals += [written[b["$slot"]] for b in (node.get("args") or {}).values()
+                     if isinstance(b, dict) and b.get("$slot") in written]
+        if any(tainted(v, non_user, user_text) for v in literals):
+            self.rule("PROP.injection_dropped", req_id=req_id, tool=spec.name, node=node.get("node_id"))
+            return True
+        return False
+
+    def state_changing_slots(self, graph: list) -> set[str]:
+        """Slots whose values would reach a state-changing call (literal args count under their parameter name)."""
+        out: set[str] = set()
+        for node in graph:
+            spec = self.registry().get(node.get("tool", ""))
+            if spec is None or spec.effect is not Effect.STATE_CHANGING:
+                continue
+            for param, b in (node.get("args") or {}).items():
+                if isinstance(b, dict) and "$slot" in b:
+                    out.add(b["$slot"])
+                elif not (isinstance(b, dict) and ("$node" in b or "$const" in b)):
+                    out.add(param)
+        return out
+
+    def taint_sources(self) -> tuple[set[str], str]:
+        """(string values seen in tool results or evidence, everything the user said): INV-15 / D13 taint check."""
+        non_user: set[str] = set()
+        for _, c in self.tx.items("calls"):
+            if c.result_json:
+                non_user |= leaves(json.loads(c.result_json))
+        for _, f in self.tx.items("frames"):
+            non_user |= leaves([v for _, v, _ in f.claims])
+        turn = self.turn()
+        texts = [t for _, t in self.meta("utterances")] + ([turn.text] if turn is not None and turn.open else [])
+        return non_user, " ".join(texts)
+
+    def reject_tainted(self, gid: str, slot: str, req_id: str) -> None:
+        self.rule("PROP.tainted", slot=slot, req_id=req_id)
+        self.ensure_pending(gid, "planner_clarify", (slot,), f"Which {slot.replace('_', ' ')} do you mean?", f"taint:{slot}")
+
+    def parse_node(self, gid: str, i: int, raw: dict, based: int, taint: tuple[set[str], str], req_id: str) -> Node:
+        spec = self.registry().get(str(raw["tool"]))
+        guarded = spec is not None and spec.effect is Effect.STATE_CHANGING
         args: list[tuple[str, tuple]] = []
         for param, b in sorted((raw.get("args") or {}).items()):
             if isinstance(b, dict) and "$slot" in b:
@@ -710,22 +843,36 @@ class _Step:
             elif isinstance(b, dict) and "$node" in b:
                 args.append((param, ("node", b["$node"], tuple(b.get("path", ())))))
             elif isinstance(b, dict) and "$const" in b:
-                args.append((param, ("const", b["$const"])))
+                if guarded and tainted(b["$const"], *taint):
+                    self.reject_tainted(gid, param, req_id)
+                    args.append((param, ("slot", param)))
+                else:
+                    args.append((param, ("const", b["$const"])))
             else:  # F4: a literal is rebound to a slot of equal value, else written into the slot `param`
                 same = [n for (g, n), r in self.tx.items("slots") if g == gid and r.value == b]
                 name = param if param in same else (same[0] if same else None)
                 if name is None:
-                    self.write_register(gid, param, b, based, "PLANNER", True)
                     name = param
+                    if guarded and tainted(b, *taint):
+                        self.reject_tainted(gid, param, req_id)
+                    else:
+                        self.write_register(gid, param, b, based, "PLANNER", True)
                 args.append((param, ("slot", name)))
                 self.rule("PLAN.rebind", param=param, slot=name)
         return Node(str(raw.get("node_id", f"n{i + 1}")), str(raw["tool"]), tuple(args), str(raw.get("instance_tag", "")))
+
+    def planner_failed(self, req: Request) -> None:
+        newer = [r for _, r in self.tx.items("reqs") if r.based_on_seq > req.based_on_seq]
+        if req.may_change and not newer:
+            self.failure_note = True
 
     def on_proposal_failed(self) -> None:
         req = self.tx.get("reqs", self.payload.get("req_id"))
         if req is not None and req.open:
             self.tx.set("reqs", req.req_id, replace(req, open=False))
         self.rule("PROP.failed", req_id=self.payload.get("req_id"), reason=self.payload.get("reason"))
+        if req is not None and req.based_on_seq == self.payload.get("based_on_seq"):
+            self.planner_failed(req)
 
     def on_media(self) -> None:
         kind = self.payload.get("kind")
@@ -838,6 +985,27 @@ class _Step:
             return "hold"
         if goal.origin_seq is None:
             return "provenance"
+        if any(r.open and r.may_change for _, r in self.tx.items("reqs")):
+            return "replanning"  # D14: newer user input is still being planned; it may change this operation
+        spec = self.registry().get(d.node.tool)
+        said = [t for seq, t in self.meta("utterances") if seq >= goal.origin_seq]
+        op = canonical_json([d.node.tool, d.args])
+        if (goal.goal_id, op) not in self.meta("authorised"):
+            why = None
+            if not authorised(d.node.tool, spec.description if spec else "", said):
+                why = "unauthorised"  # D13: the user never asked for this operation
+            else:
+                text = " ".join(said)
+                for param, b in d.node.args:  # D13: every planner-chosen value must be something the user said
+                    reg = self.tx.get("slots", (goal.goal_id, b[1])) if b[0] == "slot" else None
+                    chosen = (b[0] == "const") or (reg is not None and reg.source == "PLANNER")
+                    if chosen and not grounded((d.args or {}).get(param), text):
+                        why = f"ungrounded:{param}"
+                        break
+            if why:
+                self.ensure_pending(goal.goal_id, "authorise", (),
+                                    f"Do you want me to {d.node.tool.replace('_', ' ')} with {canonical_json(d.args)}?", op)
+                return why
         read = [b[1] for _, b in d.node.args if b[0] == "slot"]
         for name in read:
             reg = self.tx.get("slots", (goal.goal_id, name))
@@ -887,8 +1055,9 @@ class _Step:
 
     def status_text(self, goal: Goal | None) -> str:
         """Answer a status question from state only: what is running, what is done, what is missing."""
+        planning = any(r.open and r.may_change for _, r in self.tx.items("reqs"))
         if goal is None:
-            return "Nothing is running right now."
+            return "I'm still working out how to do that." if planning else "Nothing is running right now."
         running = [c for _, c in self.tx.items("calls") if c.goal_id == goal.goal_id
                    and c.relevance is Relevance.DESIRED and c.outcome not in KNOWN_OUTCOMES]
         if running:
@@ -899,6 +1068,8 @@ class _Step:
         asked = [p for _, p in self.tx.items("pending") if p.goal_id == goal.goal_id and p.asked and not p.resolved]
         if asked:
             return f"I'm waiting on your answer: {asked[-1].text}"
+        if planning:
+            return "I'm still working out the next step."
         return "I still need a few details before I can continue."
 
     def speak(self) -> None:
@@ -930,6 +1101,13 @@ class _Step:
                 names = ", ".join(sorted({n for _, n, _ in turn.t0_writes}))
                 self.emit(ActionKind.SPEAK, "SPEECH.correction",
                           {"text": f"Okay, updating the {names}.", "act": "ack", "grounded_on": []})
+        if self.reply_text and not spoke and not self.turn_open():
+            self.emit(ActionKind.SPEAK, "SPEECH.planner_reply", {"text": self.reply_text, "act": "narration",
+                                                                 "grounded_on": []})
+        elif self.failure_note and not spoke:
+            self.emit(ActionKind.SPEAK, "SPEECH.planner_failed", {
+                "text": "Sorry, I couldn't work out how to do that. Could you say it another way?",
+                "act": "narration", "grounded_on": []})
         if goal is None or self.meta("deadline_passed") or self.meta("hold"):
             return
         done, grounded, ops = self.satisfied(goal)
