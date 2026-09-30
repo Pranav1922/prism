@@ -52,4 +52,5 @@ def done(results: list[tuple[str, Any]], committed: list[str]) -> str:
     """Completed task: grounded only on the calls/operations the kernel passes in."""
     parts = [f"{words(tool)} done: {summarise(data)}" for tool, data in results]
     parts += [f"{words(tool)} went through" for tool in committed if tool not in {t for t, _ in results}]
-    return "; ".join(parts) + "." if parts else "Done."
+    text = "; ".join(parts) + "." if parts else "Done."
+    return text[:1].upper() + text[1:]

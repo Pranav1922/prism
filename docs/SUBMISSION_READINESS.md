@@ -4,7 +4,7 @@
 |---|---|
 | Date | 2026-09-30 |
 | Scope | Implementation A (this repository), final integration |
-| Headline | **57/57 internal black-box scenarios pass** (mean 99.8). **Real speech recognition and real OCR** run in the demo. 329 tests pass on Python 3.12 and 3.10; ruff and mypy clean. The Docker image runs the whole suite on Linux. |
+| Headline | **57/57 internal black-box scenarios pass** (mean 99.8). **Real speech recognition and real OCR** run in the demo. 341 tests pass on Python 3.12 and 3.10; ruff and mypy clean. The Docker image runs the whole suite on Linux. |
 
 **Nothing here was tested with the Samsung evaluation kit.** It was not available (UNK-1).
 - PRISM-LOCAL/0 is this project's own local protocol, not Samsung's.
@@ -28,6 +28,7 @@
 | Speech output | macOS `say` in the demo presenter | fallback-grade (no TTS built, as allowed by R15) |
 | Black-box harness, mock tool world, evaluator, 57 scenarios | `evaluation/` | implemented |
 | Demo presenter (timeline, verdict, spoken replay) | `demo/` | implemented |
+| **Live web console**: real-time timeline, interruption and stale-result visualisation, task and trust panels, System view (decisions, kernel state, protocol), guided demos scored by the evaluator, live text/voice/image input | `frontend/` ([README](../frontend/README.md)) | implemented (local, one presenter) |
 
 ## 2. Theme 05 requirement mapping
 
@@ -145,10 +146,11 @@ uv venv --python 3.12 .venv && uv pip install -e ".[dev]"
 brew install tesseract                      # OCR, if missing
 
 # demo
+.venv/bin/python -m frontend.server --open  # live console at http://127.0.0.1:8765 (guided demos + live input)
 .venv/bin/python demo/run_demo.py           # both demos + evaluator verdict (add --speak to hear it)
 
 # validation
-.venv/bin/python -m pytest                  # 329 tests
+.venv/bin/python -m pytest                  # 341 tests
 .venv/bin/python -m evaluation.run all --agent impl_a --out evaluation/reports/final
 .venv/bin/ruff check agent evaluation tests scripts && .venv/bin/mypy agent evaluation
 

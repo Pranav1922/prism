@@ -31,7 +31,7 @@ from agent.adapter.ingress import Ingress, Rejected, Tick
 from agent.clock import FakeClock, Scheduler
 from agent.journal import Journal
 from agent.kernel import Config, Kernel
-from agent.model import Action, Event
+from agent.model import Action, Event, canonical_json
 from agent.perception import LocalPerception
 from agent.planner import ScriptedPerception, ScriptedPlanner
 from agent.reasoner.planner import FallbackPlanner, ModelPlanner, ReplayPlanner, model_available, view_digest
@@ -86,6 +86,17 @@ class LocalAgent:
                                        "backends": {"understanding": understanding, "planner": described,
                                                     "perception": perception},
                                        "fixtures_sha256": digest})
+        stream = os.environ.get("PRISM_JOURNAL_STREAM")
+        if stream:  # a live viewer tails this file (frontend/): observation only, never read back by the agent
+            out = open(stream, "a", encoding="utf-8")  # noqa: SIM115 (lives as long as the agent)
+            for rec in self.journal.records:
+                out.write(canonical_json(rec) + "\n")
+            out.flush()
+
+            def sink(rec: dict) -> None:  # flushed per record: the viewer sees each step before agent.ready
+                out.write(canonical_json(rec) + "\n")
+                out.flush()
+            self.journal.sink = sink
         self.runtime = Runtime(self.kernel, self.journal, self._on_action, self._on_effect)
         self.ingress, self.egress = Ingress("harness"), Egress()
         scripted_perception = ScriptedPerception(fixtures.get("perception", {}).get("frames", {}),

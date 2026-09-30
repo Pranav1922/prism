@@ -500,7 +500,9 @@ class _Step:
         rid = f"r{self.next_n('n_req')}"
         based = self.meta("last_content_seq")
         may_change = not set(turn.classes) <= {TurnClass.STATUS_QUERY.value, TurnClass.BACKCHANNEL.value}
-        self.tx.set("reqs", rid, Request(rid, "understand", based, based if based > 0 else None, True, may_change))
+        handled = bool(turn.t0_writes) and all(
+            (r := self.tx.get("slots", (g, n))) is not None and r.value is not None for g, n, _ in turn.t0_writes)
+        self.tx.set("reqs", rid, Request(rid, "understand", based, based if based > 0 else None, True, may_change, handled))
         self.effects.append({"effect": "reason", "req_id": rid, "based_on_seq": based, "purpose": "understand",
                              "view": self.planner_view(turn)})
         self.arm("ack", "ack_delay", self.now + self.cfg.ack_s, str(self.seq))
@@ -781,9 +783,9 @@ class _Step:
         graph = [n for n in self.payload["graph"] if not self.injected(goal, n, non_user, user_text, req.req_id)] \
             if new_graph else []
         guarded = self.state_changing_slots(graph if new_graph else [node_json(n) for n in goal.graph])
-        kept = {b["$slot"] for n in graph for b in (n.get("args") or {}).values() if isinstance(b, dict) and "$slot" in b}
-        dropped = {b["$slot"] for n in (self.payload["graph"] if new_graph else []) if n not in graph
-                   for b in (n.get("args") or {}).values() if isinstance(b, dict) and "$slot" in b} - kept
+        kept = {name for n in graph for name in self.node_slots(n)}
+        dropped = {name for n in (self.payload["graph"] if new_graph else []) if n not in graph
+                   for name in self.node_slots(n)} - kept
         written = self.payload.get("slot_writes") or {}
         for name, value in sorted(written.items()):
             if name in dropped:  # only an injected task would have read it
@@ -827,6 +829,17 @@ class _Step:
             self.rule("PROP.injection_dropped", req_id=req_id, tool=spec.name, node=node.get("node_id"))
             return True
         return False
+
+    @staticmethod
+    def node_slots(node: dict) -> set[str]:
+        """Slots a proposed node reads: {$slot} bindings, and literals (which F4 writes into the slot `param`)."""
+        out = set()
+        for param, b in (node.get("args") or {}).items():
+            if isinstance(b, dict) and "$slot" in b:
+                out.add(b["$slot"])
+            elif not (isinstance(b, dict) and ("$node" in b or "$const" in b)):
+                out.add(param)
+        return out
 
     def state_changing_slots(self, graph: list) -> set[str]:
         """Slots whose values would reach a state-changing call (literal args count under their parameter name)."""
@@ -888,7 +901,7 @@ class _Step:
 
     def planner_failed(self, req: Request) -> None:
         newer = [r for _, r in self.tx.items("reqs") if r.based_on_seq > req.based_on_seq]
-        if req.may_change and not newer:
+        if req.may_change and not newer and not req.handled:
             self.failure_note = True
 
     def on_proposal_failed(self) -> None:

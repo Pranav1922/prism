@@ -40,8 +40,8 @@ def resolve(agent: str) -> list[str]:
 
 
 class SubprocessAgent:
-    def __init__(self, cmd: list[str], scenario_id: str, timeout_s: float = 10.0):
-        env = {**os.environ, "PRISM_SCENARIO": scenario_id, "PYTHONHASHSEED": "0"}
+    def __init__(self, cmd: list[str], scenario_id: str, timeout_s: float = 10.0, env: dict | None = None):
+        env = {**os.environ, **(env or {}), "PRISM_SCENARIO": scenario_id, "PYTHONHASHSEED": "0"}
         self.proc = subprocess.Popen(cmd, cwd=ROOT, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE, bufsize=0)
         self.timeout_s = timeout_s

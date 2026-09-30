@@ -24,11 +24,17 @@ JOURNAL_VERSION = 1
 
 
 class Journal:
-    def __init__(self, header: dict | None = None):
+    def __init__(self, header: dict | None = None, sink: Callable[[dict], None] | None = None):
         self.records: list[dict] = [{"type": "header", "version": JOURNAL_VERSION, **(header or {})}]
+        self.sink = sink  # observation only (e.g. a live viewer): receives each record as it is added
+        if sink is not None:
+            sink(self.records[0])
 
     def add(self, record: dict) -> None:
-        self.records.append(json.loads(canonical_json(record)))
+        rec = json.loads(canonical_json(record))
+        self.records.append(rec)
+        if self.sink is not None:
+            self.sink(rec)
 
     def of_type(self, *types: str) -> list[dict]:
         return [r for r in self.records if r["type"] in types]

@@ -13,6 +13,7 @@ COPY protocol ./protocol
 COPY scripts ./scripts
 COPY tests ./tests
 COPY demo ./demo
+COPY frontend ./frontend
 RUN pip install --no-cache-dir -e ".[dev]"
 ENV PYTHONHASHSEED=0
 # default: full test suite, then the black-box evaluation of every scenario

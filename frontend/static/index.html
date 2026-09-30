@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PRISM · Interruptible Agent</title>
+  <meta name="description" content="Samsung PRISM Theme 05: a real-time agent you can interrupt. Live view of the real system.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-view="story">
+  <a class="skip" href="#dock-text">Skip to input</a>
+
+  <header class="top">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div>
+        <div class="brand-name">Interruptible Agent</div>
+        <div class="brand-sub">Samsung PRISM · Theme 05 · live system console</div>
+      </div>
+    </div>
+    <div class="session" id="session" aria-live="polite">
+      <span class="session-dot"></span><span id="session-label">Not started</span>
+      <span class="session-clock" id="clock">0.0 s</span>
+    </div>
+    <div class="view-switch" role="tablist" aria-label="View">
+      <button role="tab" data-view="story" aria-selected="true">Story</button>
+      <button role="tab" data-view="system" aria-selected="false">System</button>
+    </div>
+    <button class="btn ghost" id="open-library">Guided demos</button>
+    <div class="honesty" id="honesty" aria-label="What is real in this session"></div>
+  </header>
+
+  <main class="stage">
+    <!-- LEFT: the agent's current understanding of the task, and why its answer can be trusted -->
+    <aside class="rail left" aria-label="Task">
+      <section class="panel task" id="task">
+        <h2 class="eyebrow">Current task</h2>
+        <div id="task-body" class="empty-note">No task yet.</div>
+      </section>
+      <section class="panel trust" id="trust">
+        <h2 class="eyebrow">Why this answer</h2>
+        <div id="trust-body" class="empty-note">The answer will appear here with the exact tool results it rests on, and the results it refused to use.</div>
+      </section>
+    </aside>
+
+    <!-- CENTER: what is happening now, and everything that happened, on one clock -->
+    <section class="center" aria-label="Live activity">
+      <div class="now" id="now" aria-live="polite" aria-atomic="true">
+        <div class="now-kicker" id="now-kicker">Ready</div>
+        <div class="now-title" id="now-title">Ask for something, then change your mind while it works.</div>
+        <div class="now-detail" id="now-detail"></div>
+      </div>
+      <div class="moments" id="moments" aria-live="polite"></div>
+      <div class="timeline-wrap">
+        <div class="timeline" id="timeline" role="img" aria-label="Timeline of user input, perception, planning, tool calls and agent speech"></div>
+        <div class="landing" id="landing">
+          <h1>An agent you can interrupt.</h1>
+          <p>Change your mind while it is working. Watch it drop the old work at once, ignore results that arrive too late, and answer only from what is still true.</p>
+          <div class="landing-actions">
+            <button class="btn primary big" id="landing-guided">▶ Watch: change of mind, mid-search</button>
+            <button class="btn big" id="landing-live">Try it live</button>
+          </div>
+          <p class="landing-note">Everything on this screen comes from the real agent process and its own journal. Tools are simulated; see the chips at the top right for what is real.</p>
+        </div>
+      </div>
+      <div class="facts" id="facts" aria-label="Session facts"></div>
+      <div class="legend" aria-label="Legend">
+        <span><i class="lg running"></i>running</span>
+        <span><i class="lg done"></i>used in the answer</span>
+        <span><i class="lg ok"></i>finished</span>
+        <span><i class="lg superseded"></i>cancelled / superseded</span>
+        <span><i class="lg stale"></i>late result, ignored</span>
+        <span><i class="lg evidence"></i>perception</span>
+        <span><i class="lg plan"></i>planning</span>
+      </div>
+    </section>
+
+    <!-- RIGHT: story (conversation) or system internals -->
+    <aside class="rail right" aria-label="Details">
+      <section class="panel story-only" id="convo-panel">
+        <h2 class="eyebrow">Conversation</h2>
+        <ol class="convo" id="convo"><li class="empty-note">Nothing said yet.</li></ol>
+      </section>
+      <section class="panel system-only" id="system-panel">
+        <div class="tabs" role="tablist" aria-label="System details">
+          <button role="tab" data-tab="why" aria-selected="true">Decisions</button>
+          <button role="tab" data-tab="state" aria-selected="false">Kernel state</button>
+          <button role="tab" data-tab="wire" aria-selected="false">Protocol</button>
+        </div>
+        <div class="tab-body" id="tab-why"></div>
+        <div class="tab-body" id="tab-state" hidden></div>
+        <div class="tab-body" id="tab-wire" hidden></div>
+      </section>
+    </aside>
+  </main>
+
+  <!-- INPUT: live interaction, or the guided-demo bar -->
+  <footer class="dock" id="dock">
+    <div class="dock-live" id="dock-live">
+      <div class="prompts" id="prompts" aria-label="Suggested requests"></div>
+      <div class="dock-row">
+        <button class="mic" id="mic" aria-label="Hold to talk (or press and hold the M key)" title="Hold to talk">
+          <span class="mic-icon" aria-hidden="true"></span><span class="mic-level" id="mic-level"></span>
+        </button>
+        <div class="menu-wrap">
+          <button class="btn icon" id="clips-btn" aria-haspopup="true" aria-expanded="false" title="Prepared voice clips">♪ Clips</button>
+          <div class="menu" id="clips-menu" hidden></div>
+        </div>
+        <div class="menu-wrap">
+          <button class="btn icon" id="image-btn" aria-haspopup="true" aria-expanded="false" title="Show an image">▣ Image</button>
+          <div class="menu" id="image-menu" hidden></div>
+          <input type="file" id="image-file" accept="image/png,image/jpeg" hidden>
+        </div>
+        <form class="text-form" id="text-form" autocomplete="off">
+          <input id="dock-text" type="text" placeholder="Type a request, then type a correction while it works…" aria-label="Message to the agent" maxlength="500">
+          <button class="btn primary" type="submit">Send</button>
+        </form>
+        <button class="btn icon" id="voice-out" aria-pressed="false" title="Speak the agent's replies aloud">🔈 Voice</button>
+        <select id="preset" aria-label="Tool behaviour"></select>
+        <button class="btn ghost" id="reset" title="Start a fresh live session">Reset</button>
+      </div>
+    </div>
+    <div class="dock-guided" id="dock-guided" hidden>
+      <div class="guided-info">
+        <div class="guided-title" id="guided-title"></div>
+        <ul class="guided-watch" id="guided-watch"></ul>
+      </div>
+      <div class="guided-actions">
+        <select id="guided-speed" aria-label="Playback speed" title="Virtual time runs faster; the event order and the evaluator result are unchanged">
+          <option value="1">1× real time</option><option value="2">2× playback</option></select>
+        <button class="btn" id="guided-replay">↻ Replay</button>
+        <button class="btn ghost" id="guided-exit">Go live</button>
+      </div>
+    </div>
+  </footer>
+
+  <dialog class="library" id="library" aria-labelledby="library-title">
+    <div class="library-head">
+      <h2 id="library-title">Guided demos</h2>
+      <p>Each demo replays a scenario file from the evaluation suite in real time against the real agent, then scores it with the unchanged black-box evaluator.</p>
+      <button class="btn ghost close" id="library-close" aria-label="Close">✕</button>
+    </div>
+    <ol class="library-list" id="library-list"></ol>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="assertive" hidden></div>
+  <div class="dropzone" id="dropzone" hidden>Drop an image to show it to the agent</div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

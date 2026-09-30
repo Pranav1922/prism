@@ -22,13 +22,31 @@ class ScriptedPlanner:
 
     script: dict[str, dict] = field(default_factory=dict)
     latency: float = 0.3
+    min_similarity: float = 0.85  # word-set overlap needed to accept a noisy transcript as a known utterance
+    records: list[dict] = field(default_factory=list)
+
+    def match(self, text: str) -> tuple[str | None, float]:
+        """Exact key, then case/punctuation-insensitive, then the most similar key (word-set Jaccard) above the
+        threshold: speech recognition adds noise ("find flight flights from ..."), not new meaning."""
+        if text in self.script:
+            return text, 1.0
+        norm = {_norm(k): k for k in self.script}
+        if _norm(text) in norm:
+            return norm[_norm(text)], 1.0
+        words = set(_norm(text).split())
+        best, score = None, 0.0
+        for n, k in norm.items():
+            other = set(n.split())
+            sim = len(words & other) / len(words | other) if words | other else 0.0
+            if sim > score:
+                best, score = k, sim
+        return (best, round(score, 3)) if score >= self.min_similarity else (None, round(score, 3))
 
     def respond(self, request: dict, now: float) -> tuple[float, Event]:
         base = {"req_id": request["req_id"], "based_on_seq": request["based_on_seq"]}
-        text = request["view"]["turn_text"]
-        proposal = self.script.get(text)
-        if proposal is None:  # a transcript differs from the typed key in case / punctuation only
-            proposal = {_norm(k): v for k, v in self.script.items()}.get(_norm(text))
+        key, similarity = self.match(request["view"]["turn_text"])
+        proposal = self.script.get(key) if key is not None else None
+        self.records.append({"backend": "scripted", "fixture": key, "similarity": similarity})
         if proposal is None:
             return now + self.latency, Event(Kind.PROPOSAL_FAILED, now + self.latency, {**base, "reason": "no_script"})
         return now + self.latency, Event(Kind.PROPOSAL, now + self.latency, {**base, **proposal})

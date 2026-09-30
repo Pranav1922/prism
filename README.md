@@ -17,12 +17,14 @@ It takes spoken requests (real on-device speech recognition) and images (real OC
 ```sh
 uv venv --python 3.12 .venv && uv pip install -e ".[dev]"   # setup (Python 3.10-3.12)
 ./scripts/build_asr.sh                                      # macOS: on-device speech recognition helper
-.venv/bin/python demo/run_demo.py                           # the two demos (add --speak to hear them)
-.venv/bin/python -m pytest                                  # 329 tests
+.venv/bin/python -m frontend.server --open                  # the live console: http://127.0.0.1:8765
+.venv/bin/python demo/run_demo.py                           # the two demos in the terminal (add --speak to hear them)
+.venv/bin/python -m pytest                                  # 341 tests
 .venv/bin/python -m evaluation.run all --agent impl_a       # black-box evaluation, 57 scenarios
 docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + evaluation on Linux
 ```
 
+- **Live console:** [`frontend/README.md`](frontend/README.md). It shows the real agent in real time: a timeline of your input, perception, planning, tool calls and speech; each interruption cutting across the running work; late results visibly refused; and why the final answer can be trusted. It has guided demos (scored by the evaluator), live text, voice and image input, and a System view of the kernel's decisions and state.
 - **Demo:** [`demo/README.md`](demo/README.md), with a reference run in [`demo/SAMPLE_OUTPUT.txt`](demo/SAMPLE_OUTPUT.txt).
 - **Submission status, requirement mapping and limitations:** [`docs/SUBMISSION_READINESS.md`](docs/SUBMISSION_READINESS.md).
 
@@ -43,7 +45,7 @@ docker build -t prism-theme05 . && docker run --rm prism-theme05   # tests + eva
   - no false completion.
 
   Each is checked on every kernel step by the invariant checker (INV-01…23 plus decisions D13/D14).
-- **Tests:** 329 pass on Python 3.10 and 3.12; ruff and mypy clean.
+- **Tests:** 341 pass on Python 3.10 and 3.12; ruff and mypy clean.
 
 ### Build history
 

@@ -249,6 +249,7 @@ class Request:
     user_seq: int | None  # user-content seq behind the request (provenance); None if there was none
     open: bool = True
     may_change: bool = True  # the turn may change the task (not only status questions): D14 withholds side effects
+    handled: bool = False  # fast understanding already applied the turn's change: a planner failure is not the user's
 
 
 @dataclass(frozen=True)

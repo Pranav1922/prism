@@ -342,8 +342,10 @@ def test_13_injection_inside_a_tool_result_cannot_trigger_a_booking():
     sim = run([(0.1, say(FIND)), (0.3, eot()), (4.0, say(q)), (4.2, eot())],
               {FIND: (0.25, FIND_PLAN), q: (0.25, evil)}, tools={"search_flights": Behavior(2.0, data=injected)})
     assert not calls(sim, "book_flight") and not sim.of(ActionKind.CLARIFY)  # refused without asking about it
-    assert {r.get("tool") or r.get("slot") for r in rules(sim, "PROP.injection_dropped")} == {"book_flight", "passengers"}
+    assert {r.get("tool") or r.get("slot") for r in rules(sim, "PROP.injection_dropped")} == {"book_flight", "flight_id", "passengers"}
     assert "flight_id" not in final_slots(sim) and "passengers" not in final_slots(sim)
+    state_slots = {name for (_, name), _ in sim.kernel.state.items("slots")}
+    assert not {"flight_id", "passengers"} & state_slots  # the injected values never enter session state at all
 
 
 def test_13b_authorised_booking_with_a_tool_derived_literal_is_asked_about():
@@ -540,3 +542,11 @@ def test_end_of_turn_before_the_transcript_closes_the_turn_when_the_transcript_a
     close = rules(sim, "TURN.close")[0]
     assert close["inferred"] is False  # closed by the user's end of turn at the transcript (0.7), not the 1 s timer
     assert calls(sim)[0].dispatched_seq and final_slots(sim)["destination"] == "DEL"
+
+
+def test_scripted_planner_tolerates_recognition_noise_but_not_different_requests():
+    from agent.planner import ScriptedPlanner
+    p = ScriptedPlanner({FIND: FIND_PLAN, "actually, to Mumbai": {"intent": "search_flights"}})
+    assert p.match("Find flight flights from Bangalore to Delhi on Friday")[0] == FIND  # ASR duplicate word
+    assert p.match("find flights from Bangalore to Mumbai on Friday")[0] is None  # a different request
+    assert p.match("actually, to Goa")[0] is None

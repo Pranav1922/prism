@@ -15,3 +15,4 @@ evaluation/reports/*/traces/
 demo/output/
 # recorded agent journals of evaluation runs ARE evidence (replay mode): keep them
 !evaluation/reports/**/journals/
+demo/uploads/
